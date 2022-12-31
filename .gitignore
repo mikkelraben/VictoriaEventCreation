@@ -14,7 +14,6 @@
 # Compiled Dynamic libraries
 *.so
 *.dylib
-*.dll
 
 # Fortran module files
 *.mod
@@ -24,9 +23,22 @@
 *.lai
 *.la
 *.a
-*.lib
 
 # Executables
 *.exe
 *.out
 *.app
+*.ipch
+*.vsidx
+/.vs/VictoriaEventCreation/v17
+/.vs/VictoriaEventCreation/FileContentIndex
+*.exp
+*.pdb
+*.idb
+/x64/Debug/imgui.ini
+/x64/Release/imgui.ini
+/x64/Debug/log.txt
+/x64/Release/log.txt
+/VictoriaEventCreation/x64/Debug
+/VictoriaEventCreation/x64/Release
+*.txt
