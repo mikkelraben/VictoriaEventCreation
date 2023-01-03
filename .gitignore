@@ -42,3 +42,5 @@
 /VictoriaEventCreation/x64/Debug
 /VictoriaEventCreation/x64/Release
 *.txt
+/VictoriaEventCreation/settings.ini
+/VictoriaEventCreation/imgui.ini
