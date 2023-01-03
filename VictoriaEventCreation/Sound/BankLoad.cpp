@@ -151,7 +151,7 @@ namespace Bank
         {
             return;
         }
-        std::string filename = path.filename().string();
+        std::string filename = path.string();
 
         //find length of file
         std::basic_ifstream<std::byte> file;

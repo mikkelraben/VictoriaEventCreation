@@ -1,7 +1,5 @@
 #pragma once
 
-
-
 #include <string>
 #include <string_view>
 #include <vector>
@@ -20,3 +18,4 @@
 #include "imgui/imgui_stdlib.h"
 #include "imgui/implot.h"
 #include "Log.h"
+#include "Settings.h"

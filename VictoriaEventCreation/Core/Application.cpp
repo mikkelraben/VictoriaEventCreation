@@ -24,12 +24,17 @@ namespace BaseApp {
 
     Application::Application()
     {
+        Settings::LoadSettings();
         InitWindow();
         Window* eventThingy = new EventTool(windows);
         windows.push_back(eventThingy);
 
         Window* console = new Console(windows);
         windows.push_back(console);
+
+        SettingsEditor* settings = new SettingsEditor(windows);
+        windows.push_back(settings);
+
 
 
         Run();
@@ -126,7 +131,22 @@ namespace BaseApp {
             windowHasOpened = true;
         }
 
-        ImGui::Begin(name.c_str(), &isWindowOpen, windowFlags);
+        bool* closeWindow = &isWindowOpen;
+        if (!canWindowClose)
+        {
+            closeWindow = nullptr;
+        }
+
+        if (unsavedChanges)
+        {
+            windowFlags |= ImGuiWindowFlags_UnsavedDocument;
+        }
+        else
+        {
+            windowFlags &= !ImGuiWindowFlags_UnsavedDocument;
+        }
+
+        ImGui::Begin(name.c_str(), closeWindow, windowFlags);
 
         //if window should close
         if (!isWindowOpen)
@@ -134,7 +154,7 @@ namespace BaseApp {
             if (!unsavedChanges)
             {
                 Exit();
-                windowHasOpened = true;
+                windowHasOpened = false;
             }
             else
             {

@@ -45,7 +45,7 @@ namespace BaseApp {
         bool isWindowOpen = false;
     protected:
 
-        //override to use standard window behaviour
+        //override to use non standard window behaviour
         //called every frame no need to create window
         virtual void Run() {};
 

@@ -39,10 +39,13 @@ void EventTool::Run()
         }
         ImGui::EndCombo();
     }
-    if(VecGui::Button("Play"))
+    if (!soundsFile.sounds.empty())
     {
-        sound = std::make_unique<Sound>(soundsFile.sounds[selected], soundsFile);
-        sound->play();
+        if(VecGui::Button("Play"))
+        {
+            sound = std::make_unique<Sound>(soundsFile.sounds[selected], soundsFile);
+            sound->play();
+        }
     }
 
 }
@@ -64,4 +67,19 @@ void Console::Run()
             ImGui::TextUnformatted((Log::logs[i].type + Log::logs[i].log).c_str());
         }
     }
+}
+
+void SettingsEditor::Run()
+{
+    Settings::gameDirectory.editor();
+
+    if (VecGui::Button("Save Settings"))
+    {
+        if (Settings::gameDirectory.tryChangeSetting())
+        {
+            Settings::SaveSettings();
+        }
+    }
+
+    unsavedChanges = !Settings::gameDirectory.newSettingEqual();
 }

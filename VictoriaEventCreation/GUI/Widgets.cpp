@@ -25,9 +25,6 @@ bool VecGui::Button(std::string_view id, const ImVec2& size)
     const static auto mainTexturePath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\buttons\\default_button_bg.dds");
     const static auto frameTexturePath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\buttons\\default_button_bg.dds");
     const static auto detailTexturePath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\buttons\\default_button_bg.dds");
-    
-    
-
 
     ImVec2 cursor = ImGui::GetCursorScreenPos();
 

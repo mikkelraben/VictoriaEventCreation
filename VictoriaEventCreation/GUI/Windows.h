@@ -24,7 +24,7 @@ public:
     void Run() override;
     void Opened() override;
 private:
-    Bank::File soundsFile = Bank::File(std::filesystem::current_path() / "Events.bank");
+    Bank::File soundsFile = Bank::File(Settings::gameDirectory.getSetting() / "game\\sound\\banks" / "Events.bank");
     std::unique_ptr<Sound> sound;
     std::jthread soundLoadThread;
 };
@@ -35,6 +35,17 @@ public:
     explicit Console(std::vector<Window*>& applicationWindows) : Window(applicationWindows)
     {
         name = "Console";
+        isWindowOpen = true;
+    }
+    void Run() override;
+};
+
+class SettingsEditor : public BaseApp::Window
+{
+public:
+    explicit SettingsEditor(std::vector<Window*>& applicationWindows) : Window(applicationWindows)
+    {
+        name = "Settings";
         isWindowOpen = true;
     }
     void Run() override;
