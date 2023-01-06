@@ -35,12 +35,12 @@
 *.exp
 *.pdb
 *.idb
-/x64/Debug/imgui.ini
-/x64/Release/imgui.ini
 /x64/Debug/log.txt
 /x64/Release/log.txt
 /VictoriaEventCreation/x64/Debug
 /VictoriaEventCreation/x64/Release
 *.txt
-/VictoriaEventCreation/settings.ini
-/VictoriaEventCreation/imgui.ini
+/x64/Debug/Core/shaders
+/x64/Debug/gfx
+*.ini
+/x64/Debug/vorbisHeaders
