@@ -2,6 +2,8 @@
 #include "Graphics.h"
 #include "ResourceHandler.h"
 
+using namespace std::chrono_literals;
+
 struct InitError
 {
     std::string error;
@@ -25,10 +27,20 @@ Graphics::Graphics()
     catch (InitError e)
     {
         RE_LogError(e.error);
-        return;
+        throw e;
     }
     ResourceHandler::InitResourceHandler(this);
+
+    whiteTexture = ResourceHandler::GetTexture("gfx\\white.dds");
+
+    while (!whiteTexture.get()->initialized)
+    {
+        ResourceHandler::SubmitWork();
+        std::this_thread::sleep_for(1ms);
+    }
+    ImGui_ImplVulkan_GetWhiteTexture(whiteTexture.get()->textureID);
     
+
     RE_LogMessage("Finished Initializing Graphics");
 }
 
@@ -115,6 +127,13 @@ void Graphics::initVulkan()
 
 #pragma region LogicalDevice
     vkb::DeviceBuilder deviceBuilder{ physicalDeviceReturn.value() };
+
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT dynamicState3Features{};
+
+    dynamicState3Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT;
+    dynamicState3Features.extendedDynamicState3ColorBlendEquation = VK_TRUE;
+
+    deviceBuilder.add_pNext(&dynamicState3Features);
 
     auto deviceReturn = deviceBuilder.build();
     if (!deviceReturn)
@@ -215,8 +234,31 @@ void Graphics::destroyVulkan()
     vkb::destroy_instance(vkbInstance);
 }
 
+PFN_vkVoidFunction VulkanLoadFunctions(const char* function_name,void* userData)
+{
+    auto graphics = reinterpret_cast<Graphics*>(userData);
+
+
+
+    auto fun = vkGetInstanceProcAddr(graphics->instance, function_name);
+
+    if (fun == nullptr)
+    {
+        std::string name = function_name;
+        RE_LogError("Could Not Load Vulkan Function: " + name);
+    }
+
+    return fun;
+}
+
 void Graphics::initImgui()
 {
+    if (!ImGui_ImplVulkan_LoadFunctions(VulkanLoadFunctions, this))
+    {
+        RE_LogError("Could not Load Functions");
+        throw InitError("Could not load certain Vulkan functions. Updating drivers might help.");
+    }
+
     SetupVulkanWindow(&mainWindowData);
 
     // Setup Dear ImGui context
@@ -237,6 +279,7 @@ void Graphics::initImgui()
 
     SetStyle();
     
+
     ImGui_ImplGlfw_InitForVulkan(window, true);
 
     ImGui_ImplVulkan_InitInfo init_info{};
@@ -326,14 +369,21 @@ void Graphics::initImgui()
         ImGui_ImplVulkan_DestroyFontUploadObjects();
     }
 
-    
+
 }
 
 void LoadFont(ImGuiIO& io, std::vector<std::filesystem::path>& fonts, size_t index, float size)
 {
-    if (!io.Fonts->AddFontFromFileTTF(fonts[index].string().c_str(), size))
+    if (std::filesystem::exists(fonts[index]))
     {
-        RE_LogError("Error Loading font: " + fonts[index].string());
+        if (!io.Fonts->AddFontFromFileTTF(fonts[index].string().c_str(), size))
+        {
+            RE_LogError("Error Loading font: " + fonts[index].string());
+        }
+    }
+    else
+    {
+        RE_LogWarning("Could Nof Find Font: " + fonts[index].string());
     }
 }
 
@@ -341,11 +391,11 @@ void Graphics::SetStyle()
 {
     ImGuiIO& io = ImGui::GetIO();
     RE_LogMessage("Loading Fonts");
-    //std::vector< std::filesystem::path> fonts = { "../gfx/fonts/OpenSans_SemiCondensed-Regular.ttf" ,"../gfx/fonts/OpenSans_SemiCondensed-SemiBold.ttf" };
+    std::vector< std::filesystem::path> fonts = { Settings::gameDirectory.getSetting() / "game\\fonts\\ZenOldMincho\\ZenOldMincho-Bold.ttf" };
 
-    //LoadFont(io, fonts, 0, 18);
-    //LoadFont(io, fonts, 0, 22);
-    //LoadFont(io, fonts, 0, 30);
+    LoadFont(io, fonts, 0, 16);
+    LoadFont(io, fonts, 0, 22);
+    LoadFont(io, fonts, 0, 30);
     //LoadFont(io, fonts, 1, 48);
 
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls

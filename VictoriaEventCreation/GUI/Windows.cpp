@@ -41,7 +41,14 @@ void EventTool::Run()
     }
     if (!soundsFile.sounds.empty())
     {
-        if(VecGui::Button("Play"))
+        static float sizeX = 0.0f;
+        static float sizeY = 0.0f;
+
+        ImGui::SliderFloat("Size X", &sizeX, -1, 256);
+        ImGui::SliderFloat("Size Y", &sizeY, -1, 256);
+
+
+        if(VecGui::Button("Play",{sizeX,sizeY}))
         {
             sound = std::make_unique<Sound>(soundsFile.sounds[selected], soundsFile);
             sound->play();

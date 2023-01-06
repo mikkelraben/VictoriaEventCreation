@@ -180,4 +180,13 @@
   <ItemGroup>
     <Text Include="Core\imgui\LICENSE.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Core\shaders\fragment_shader.frag" />
+    <None Include="Core\shaders\frag.spv" />
+    <None Include="Core\shaders\vert_shader.vert" />
+    <None Include="Core\shaders\vert.spv" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="GFX\white.dds" />
+  </ItemGroup>
 </Project>

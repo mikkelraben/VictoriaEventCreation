@@ -28,6 +28,9 @@ public:
 
 
     GLFWwindow* window = nullptr;
+    std::shared_ptr<Texture> whiteTexture;
+    VkDevice device;
+    VkInstance instance;
 
 private:
     const int minImageCount = 2;
@@ -52,7 +55,7 @@ private:
     bool enableValidationLayers = false;
 #endif
 
-    VkDevice device;
+
     vkb::Device vkbDevice;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 
@@ -67,7 +70,6 @@ private:
     std::vector<VkImageView> swapchainImageViews;
     std::vector<VkFramebuffer> framebuffers;
 
-    VkInstance instance;
     vkb::Instance vkbInstance;
 
     VkDescriptorPool descriptorPool;

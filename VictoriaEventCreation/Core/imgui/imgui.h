@@ -2510,6 +2510,8 @@ struct ImDrawCmd
     ImDrawCallback  UserCallback;       // 4-8  // If != NULL, call the function instead of rendering the vertices. clip_rect and texture_id will be set normally.
     void*           UserCallbackData;   // 4-8  // The draw callback code can access this.
 
+    ImTextureID     AlphaId = nullptr;  // 4-8  // User-provided texture ID. Set by user in ImfontAtlas::SetTexID() for fonts or passed to Image*() functions. Ignore if never using images or multiple fonts atlas.
+    bool            Overlay = false;    // 4    // 
     ImDrawCmd() { memset(this, 0, sizeof(*this)); } // Also ensure our padding fields are zeroed
 
     // Since 1.83: returns ImTextureID associated with this draw call. Warning: DO NOT assume this is always same as 'TextureId' (we will change this function for an upcoming feature)
@@ -2522,6 +2524,7 @@ struct ImDrawVert
 {
     ImVec2  pos;
     ImVec2  uv;
+    ImVec2  alphaUV;
     ImU32   col;
 };
 #else

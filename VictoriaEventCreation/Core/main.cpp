@@ -25,7 +25,7 @@ int main()
     }
     catch (...)
     {
-        RE_LogError("Unkown Error: Exception not catched terminating program");
+        RE_LogError("Unknown Error: Exception not catched terminating program");
     }
     Log::SaveLogs();
 
