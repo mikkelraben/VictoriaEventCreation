@@ -27,6 +27,8 @@ namespace BaseApp {
     {
     public:
         Window(std::vector<Window*>& applicationWindows);
+
+        //should probably remove it self from windows vector
         virtual ~Window() = default;
 
         //call every frame

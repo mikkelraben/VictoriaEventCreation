@@ -10,6 +10,9 @@ void main()
 {
     vec4 tex = texture(sTexture,In.UV.st);
     vec4 base = texture(alphaTexture,In.AlphaUV.st);
+    if(base.a < 1){
+        base.a = 0;
+    }
     vec4 top = vec4(tex.rgb,base.a*tex.a);
 
 

@@ -166,6 +166,14 @@ void Sound::play()
     PlayingThread.join();
 }
 
+void Sound::pause()
+{
+    if (soundPlayer.getStatus() == soundPlayer.Playing)
+    {
+        soundPlayer.pause();
+    }
+}
+
 void Sound::createVorbisFile()
 {
     auto start = std::chrono::high_resolution_clock::now();

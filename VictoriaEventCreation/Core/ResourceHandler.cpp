@@ -262,7 +262,7 @@ void ResourceHandler::LoadTexture(const std::filesystem::path& file)
             {
                 throw ResourceError("Could not end CommandBuffer");
             }
-
+            
             {
                 std::scoped_lock lock(submitInfosMutex);
                 submitInfos.push_back(endInfo);
@@ -281,6 +281,7 @@ void ResourceHandler::LoadTexture(const std::filesystem::path& file)
                 *var = *texture;
             }
             waitForTexturesUpdated.release();
+            vkDestroyCommandPool(graphics->device, cmdPool, nullptr);
         }
     }
     catch (const ResourceError& e)

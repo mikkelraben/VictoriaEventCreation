@@ -8,6 +8,7 @@ class Sound
 public:
     Sound(Bank::Sound& _sound, Bank::File& _file) : file(_file), sound(_sound) {}//{ fileOut.open("test.ogg", std::ios::binary); }
     void play();
+    void pause();
     Bank::Sound sound;
     Bank::File& file;
 

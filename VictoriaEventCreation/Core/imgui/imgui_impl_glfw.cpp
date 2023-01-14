@@ -898,6 +898,7 @@ static void ImGui_ImplGlfw_CreateWindow(ImGuiViewport* viewport)
     // With GLFW 3.3, the hint GLFW_FOCUS_ON_SHOW fixes this problem
     glfwWindowHint(GLFW_VISIBLE, false);
     glfwWindowHint(GLFW_FOCUSED, false);
+    glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, true);
 #if GLFW_HAS_FOCUS_ON_SHOW
     glfwWindowHint(GLFW_FOCUS_ON_SHOW, false);
  #endif

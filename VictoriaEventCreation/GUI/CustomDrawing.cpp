@@ -3,10 +3,12 @@
 #include "CustomDrawing.h"
 #include "../Core/imgui/imgui_internal.h"
 #include "../Core/imgui/imgui_impl_vulkan.h"
+#include "../Core/ResourceHandler.h"
 
 static inline ImVec2 operator+(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x + rhs.x, lhs.y + rhs.y); }
+static inline ImVec2 operator-(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x - rhs.x, lhs.y - rhs.y); }
 
-void GetAxisPosition(const size_t& axis, float& axisValue, float startValue, const ImVec2& MiddleValues, float endValue)
+void GetAxisPosition(const size_t& axis, float& axisValue, float startValue, const ImVec2& MiddleValues, float endValue, float scale)
 {
     if (axis == 0)
     {
@@ -15,99 +17,18 @@ void GetAxisPosition(const size_t& axis, float& axisValue, float startValue, con
 
     if (axis == 1)
     {
-        axisValue = startValue + MiddleValues.x;
-        if (axisValue > endValue - MiddleValues.y)
-        {
-            axisValue = (endValue + startValue) / 2;
-        }
+        axisValue = startValue + MiddleValues.x * 1 / scale;
     }
 
     if (axis == 2)
     {
-        axisValue = endValue - MiddleValues.y;
-        if (axisValue < startValue + MiddleValues.x)
-        {
-            axisValue = (endValue + startValue) / 2;
-        }
-
+        axisValue = endValue - MiddleValues.y * 1 / scale;
     }
 
     if (axis == 3)
     {
         axisValue = endValue;
     }
-}
-
-void PrimNineGridUV(const ImVec2& startPos, const ImVec2& endPos, const ImVec4& middleRect,const ImVec2& uv_a, const ImVec4& middleUvRect, const ImVec2& uv_c, ImU32 col)
-{
-    auto draw_list = ImGui::GetWindowDrawList();
-    auto VertexCurrentIndex = draw_list->_VtxCurrentIdx;
-    ImDrawIdx index = (ImDrawIdx)VertexCurrentIndex;
-
-    auto IndexWrite = draw_list->_IdxWritePtr;
-    auto VertexWrite = draw_list->_VtxWritePtr;
-    
-    const int numberOfVertices = 16;
-
-    //define vertices
-    for (size_t x = 0; x < 4; x++)
-    {
-        for (size_t y = 0; y < 4; y++)
-        {
-            ImVec2 position;
-            ImVec2 uv;
-
-            GetAxisPosition(x,position.x,startPos.x,{middleRect.x,middleRect.z},endPos.x);
-            GetAxisPosition(y,position.y,startPos.y,{middleRect.y,middleRect.w},endPos.y);
-
-            GetAxisPosition(x, uv.x, uv_a.x, { middleUvRect.x,middleUvRect.z }, uv_c.x);
-            GetAxisPosition(y, uv.y, uv_a.y, { middleUvRect.y,middleUvRect.w }, uv_c.y);
-
-            VertexWrite[x*4+y].pos = position; VertexWrite[x * 4 + y].uv = uv; VertexWrite[x * 4 + y].col = col;
-        }
-    }
-
-    WriteIndexNineSlice(IndexWrite, index, draw_list, numberOfVertices);
-}
-
-
-void PrimNineGridUVAlphaMask(const ImVec2& startPos, const ImVec2& endPos, const ImVec4& middleRect,const ImVec2& uv_a_start, const ImVec4& middleUvAlphaRect, const ImVec2& uv_a_end, const ImVec2& uv_start,const ImVec2& uv_end,ImU32 col)
-{
-    auto draw_list = ImGui::GetWindowDrawList();
-    auto VertexCurrentIndex = draw_list->_VtxCurrentIdx;
-    ImDrawIdx index = (ImDrawIdx)VertexCurrentIndex;
-
-    auto IndexWrite = draw_list->_IdxWritePtr;
-    auto VertexWrite = draw_list->_VtxWritePtr;
-    
-    const int numberOfVertices = 16;
-
-    //define vertices
-    for (size_t x = 0; x < 4; x++)
-    {
-        for (size_t y = 0; y < 4; y++)
-        {
-            ImVec2 position;
-            ImVec2 uvAlpha;
-            ImVec2 uv;
-
-            GetAxisPosition(x,position.x,startPos.x,{middleRect.x,middleRect.z},endPos.x);
-            GetAxisPosition(y,position.y,startPos.y,{middleRect.y,middleRect.w},endPos.y);
-
-            GetAxisPosition(x, uvAlpha.x, uv_a_start.x, { middleUvAlphaRect.x,middleUvAlphaRect.z }, uv_a_end.x);
-            GetAxisPosition(y, uvAlpha.y, uv_a_start.y, { middleUvAlphaRect.y,middleUvAlphaRect.w }, uv_a_end.y);
-
-            ImVec2 size = { endPos.x - startPos.x,endPos.y - startPos.y };
-            ImVec2 offset = { position.x - startPos.x,position.y - startPos.y };
-
-            uv.x = offset.x / size.x;
-            uv.y = offset.y / size.y;
-
-            VertexWrite[x * 4 + y].pos = position; VertexWrite[x * 4 + y].alphaUV = uvAlpha; VertexWrite[x * 4 + y].col = col; VertexWrite[x * 4 + y].uv = uv;
-        }
-    }
-
-    WriteIndexNineSlice(IndexWrite, index, draw_list, numberOfVertices);
 }
 
 void WriteIndexNineSlice(ImDrawIdx* IndexWrite, const ImDrawIdx& index, ImDrawList* draw_list, const int& numberOfVertices)
@@ -127,6 +48,77 @@ void WriteIndexNineSlice(ImDrawIdx* IndexWrite, const ImDrawIdx& index, ImDrawLi
     draw_list->_VtxWritePtr += numberOfVertices;
     draw_list->_VtxCurrentIdx += numberOfVertices;
     draw_list->_IdxWritePtr += 54;
+}
+
+void PrimNineGridUV(const ImVec2& startPos, const ImVec2& endPos, const ImVec4& middleRect,const ImVec2& uv_a, const ImVec4& middleUvRect, const ImVec2& uv_c, ImU32 col, float scale)
+{
+    auto draw_list = ImGui::GetWindowDrawList();
+    auto VertexCurrentIndex = draw_list->_VtxCurrentIdx;
+    ImDrawIdx index = (ImDrawIdx)VertexCurrentIndex;
+
+    auto IndexWrite = draw_list->_IdxWritePtr;
+    auto VertexWrite = draw_list->_VtxWritePtr;
+    
+    const int numberOfVertices = 16;
+
+    //define vertices
+    for (size_t x = 0; x < 4; x++)
+    {
+        for (size_t y = 0; y < 4; y++)
+        {
+            ImVec2 position;
+            ImVec2 uv;
+
+            GetAxisPosition(x,position.x,startPos.x,{middleRect.x,middleRect.z},endPos.x, scale);
+            GetAxisPosition(y,position.y,startPos.y,{middleRect.y,middleRect.w},endPos.y, scale);
+
+            GetAxisPosition(x, uv.x, uv_a.x, { middleUvRect.x,middleUvRect.z }, uv_c.x, 1);
+            GetAxisPosition(y, uv.y, uv_a.y, { middleUvRect.y,middleUvRect.w }, uv_c.y, 1);
+
+            VertexWrite[x*4+y].pos = position; VertexWrite[x * 4 + y].uv = uv; VertexWrite[x * 4 + y].col = col;
+        }
+    }
+
+    WriteIndexNineSlice(IndexWrite, index, draw_list, numberOfVertices);
+}
+
+void PrimNineGridUVAlphaMask(const ImVec2& startPos, const ImVec2& endPos, const ImVec4& middleRect,const ImVec2& uv_a_start, const ImVec4& middleUvAlphaRect, const ImVec2& uv_a_end, const ImVec2& uv_start,const ImVec2& uv_end,ImU32 col, float scale)
+{
+    auto draw_list = ImGui::GetWindowDrawList();
+    auto VertexCurrentIndex = draw_list->_VtxCurrentIdx;
+    ImDrawIdx index = (ImDrawIdx)VertexCurrentIndex;
+
+    auto IndexWrite = draw_list->_IdxWritePtr;
+    auto VertexWrite = draw_list->_VtxWritePtr;
+    
+    const int numberOfVertices = 16;
+
+    //define vertices
+    for (size_t x = 0; x < 4; x++)
+    {
+        for (size_t y = 0; y < 4; y++)
+        {
+            ImVec2 position;
+            ImVec2 uvAlpha;
+            ImVec2 uv;
+
+            GetAxisPosition(x, position.x, startPos.x, { middleRect.x,middleRect.z }, endPos.x, scale);
+            GetAxisPosition(y, position.y, startPos.y, { middleRect.y,middleRect.w }, endPos.y, scale);
+
+            GetAxisPosition(x, uvAlpha.x, uv_a_start.x, { middleUvAlphaRect.x,middleUvAlphaRect.z }, uv_a_end.x, 1);
+            GetAxisPosition(y, uvAlpha.y, uv_a_start.y, { middleUvAlphaRect.y,middleUvAlphaRect.w }, uv_a_end.y, 1);
+
+            ImVec2 size = { endPos.x - startPos.x,endPos.y - startPos.y };
+            ImVec2 offset = { position.x - startPos.x,position.y - startPos.y };
+
+            uv.x = offset.x / size.x;
+            uv.y = offset.y / size.y;
+
+            VertexWrite[x * 4 + y].pos = position; VertexWrite[x * 4 + y].alphaUV = uvAlpha; VertexWrite[x * 4 + y].col = col; VertexWrite[x * 4 + y].uv = uv;
+        }
+    }
+
+    WriteIndexNineSlice(IndexWrite, index, draw_list, numberOfVertices);
 }
 
 void PrimRectUVAlpha(const ImVec2& startPos, const ImVec2& endPos, const ImVec2& uv_min, const ImVec2& uv_max, const ImVec2& uv_a_min, const ImVec2& uv_a_max, ImU32 col)
@@ -158,7 +150,8 @@ void PrimRectUVAlpha(const ImVec2& startPos, const ImVec2& endPos, const ImVec2&
 
 }
 
-void DrawNineSliceImage(Texture& texture, ImVec2 pos, ImVec2 size, ImVec4 middleSlice, ImVec2 uvMin, ImVec2 uvMax, ImColor color)
+
+void DrawNineSliceImage(Texture& texture, ImVec2 pos, ImVec2 size, ImVec4 middleSlice, ImVec2 uvMin, ImVec2 uvMax, ImColor color, float scale)
 {
     auto draw_list = ImGui::GetWindowDrawList();
 
@@ -175,14 +168,14 @@ void DrawNineSliceImage(Texture& texture, ImVec2 pos, ImVec2 size, ImVec4 middle
 
     //draw_list->AddCallback(drawCallback, texture.textureID);
     draw_list->PrimReserve(54, 16);
-    PrimNineGridUV(pos, pos + size, middleSlice, uvMin, middleUvSlice, uvMax, color);
+    PrimNineGridUV(pos, pos + size, middleSlice, uvMin, middleUvSlice, uvMax, color, scale);
 
     if (push_texture_id)
         draw_list->PopTextureID();
 
 }
 
-void DrawNineSliceImage(Texture& texture, Texture& alphaMask, ImVec2 pos, ImVec2 size, ImVec4 middleSlice, ImVec2 uvMin, ImVec2 uvMax, ImVec2 uvAlphaMin, ImVec2 uvAlphaMax,ImColor color, bool overlay)
+void DrawNineSliceImage(Texture& texture, Texture& alphaMask, ImVec2 pos, ImVec2 size, ImVec4 middleSlice, ImVec2 uvMin, ImVec2 uvMax, ImVec2 uvAlphaMin, ImVec2 uvAlphaMax,ImColor color, float scale, bool overlay)
 {
     auto draw_list = ImGui::GetWindowDrawList();
 
@@ -198,9 +191,12 @@ void DrawNineSliceImage(Texture& texture, Texture& alphaMask, ImVec2 pos, ImVec2
         draw_list->PushTextureID(texture.textureID);
 
     draw_list->PrimReserve(54, 16);
-    PrimNineGridUVAlphaMask(pos, pos + size, middleSlice,uvAlphaMin,middleUvSlice,uvAlphaMax,uvMin,uvMax, color);
+    PrimNineGridUVAlphaMask(pos, pos + size, middleSlice,uvAlphaMin,middleUvSlice,uvAlphaMax,uvMin,uvMax, color, scale);
     draw_list->CmdBuffer.back().AlphaId = alphaMask.textureID;
-    draw_list->CmdBuffer.back().Overlay = overlay;
+    if (overlay)
+    {
+        draw_list->CmdBuffer.back().Overlay = BlendMode::overlay;
+    }
 
 
     if (push_texture_id)
@@ -219,8 +215,272 @@ void DrawImageAlphaMask(Texture& texture, Texture& alphamask,const ImVec2& p_min
     draw_list->PrimReserve(6, 4);
     PrimRectUVAlpha(p_min, p_max, uv_min, uv_max, uv_a_min, uv_a_max, IM_COL32_WHITE);
     draw_list->CmdBuffer.back().AlphaId = alphamask.textureID;
-    draw_list->CmdBuffer.back().Overlay = true;
+    if (overlay)
+    {
+        draw_list->CmdBuffer.back().Overlay = BlendMode::overlay;
+    }
 
     if (push_texture_id)
         draw_list->PopTextureID();
+}
+
+void VictoriaWindow::RenderWindowDecorations(ImGuiWindow* window, const ImRect& title_bar_rect, bool title_bar_is_highlight, bool handle_borders_and_resize_grips, int resize_grip_count, const ImU32 resize_grip_col[4], float resize_grip_draw_size)
+{
+    const static auto mainTexturePath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\backgrounds\\popup_bg_frame.dds");
+    const static auto backgroundTexturePath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\backgrounds\\popup_bg.dds");
+    const static auto velvetOverlayPath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\textures\\velvet_texture.dds");
+    
+    const static auto defaultBackground = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\backgrounds\\default_bg.dds");
+    const static auto smallFramePath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\backgrounds\\bg_frame_small.dds");
+    const static auto smallFrameMaskPath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\backgrounds\\bg_frame_small_mask.dds");
+    
+    
+
+    const static auto TooltipPath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\tooltip\\tooltip_bg.dds");
+    const static auto TooltipFramePath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\tooltip\\tooltip_frame.dds");
+    const static auto TooltipShadingPath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\backgrounds\\default_bg_shading.dds");
+    const static auto ClothOverlayPath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\textures\\cloth_texture.dds");
+
+    ImGuiContext& g = *GImGui;
+    ImGuiStyle& style = g.Style;
+    ImGuiWindowFlags flags = window->Flags;
+
+    // Ensure that ScrollBar doesn't read last frame's SkipItems
+    IM_ASSERT(window->BeginCount == 0);
+    window->SkipItems = false;
+
+    // Draw window + handle manual resize
+    // As we highlight the title bar when want_focus is set, multiple reappearing windows will have their title bar highlighted on their reappearing frame.
+    const float window_rounding = window->WindowRounding;
+    const float window_border_size = window->WindowBorderSize;
+    if (window->Collapsed)
+    {
+        // Title bar only
+        const float backup_border_size = style.FrameBorderSize;
+        g.Style.FrameBorderSize = window->WindowBorderSize;
+        ImU32 title_bar_col = ImGui::GetColorU32((title_bar_is_highlight && !g.NavDisableHighlight) ? ImGuiCol_TitleBgActive : ImGuiCol_TitleBgCollapsed);
+        if (window->ViewportOwned)
+            title_bar_col |= IM_COL32_A_MASK; // No alpha (we don't support is_docking_transparent_payload here because simpler and less meaningful, but could with a bit of code shuffle/reuse)
+        ImGui::RenderFrame(title_bar_rect.Min, title_bar_rect.Max, title_bar_col, true, window_rounding);
+        g.Style.FrameBorderSize = backup_border_size;
+    }
+    else
+    {
+        // Window background
+        if (!(flags & ImGuiWindowFlags_NoBackground))
+        {
+            bool is_docking_transparent_payload = false;
+            if (g.DragDropActive && (g.FrameCount - g.DragDropAcceptFrameCount) <= 1 && g.IO.ConfigDockingTransparentPayload)
+                if (g.DragDropPayload.IsDataType(IMGUI_PAYLOAD_TYPE_WINDOW) && *(ImGuiWindow**)g.DragDropPayload.Data == window)
+                    is_docking_transparent_payload = true;
+
+            ImU32 bg_col = ImGui::GetColorU32(ImGuiCol_WindowBg);
+            //if (window->ViewportOwned)
+            //{
+            //    bg_col |= IM_COL32_A_MASK; // No alpha
+            //    if (is_docking_transparent_payload)
+            //        window->Viewport->Alpha *= DOCKING_TRANSPARENT_PAYLOAD_ALPHA;
+            //}
+            //else
+            //{
+            //    // Adjust alpha. For docking
+            //    bool override_alpha = false;
+            //    float alpha = 1.0f;
+            //    if (g.NextWindowData.Flags & ImGuiNextWindowDataFlags_HasBgAlpha)
+            //    {
+            //        alpha = g.NextWindowData.BgAlphaVal;
+            //        override_alpha = true;
+            //    }
+            //    if (is_docking_transparent_payload)
+            //    {
+            //        alpha *= DOCKING_TRANSPARENT_PAYLOAD_ALPHA; // FIXME-DOCK: Should that be an override?
+            //        override_alpha = true;
+            //    }
+            //    if (override_alpha)
+            //        bg_col = (bg_col & ~IM_COL32_A_MASK) | (IM_F32_TO_INT8_SAT(alpha) << IM_COL32_A_SHIFT);
+            //}
+
+            // Render, for docked windows and host windows we ensure bg goes before decorations
+            if (window->DockIsActive)
+                window->DockNode->LastBgColor = bg_col;
+            ImDrawList* bg_draw_list = window->DockIsActive ? window->DockNode->HostWindow->DrawList : window->DrawList;
+            if (window->DockIsActive || (flags & ImGuiWindowFlags_DockNodeHost))
+                bg_draw_list->ChannelsSetCurrent(DOCKING_HOST_DRAW_CHANNEL_BG);
+            
+            ImGuiWindowFlags IsChild = ImGuiWindowFlags_ChildMenu | ImGuiWindowFlags_Popup | ImGuiWindowFlags_ChildWindow | ImGuiWindowFlags_Tooltip;
+            if (!(flags & IsChild))
+            {
+                DrawNineSliceImage(*backgroundTexturePath.get(), window->Pos, window->Size, { 180,180,180,180 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE,2);
+                DrawNineSliceImage(*velvetOverlayPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 180,180,180,180 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, true);
+                DrawNineSliceImage(*mainTexturePath.get(), window->Pos, window->Size, { 180,180,180,180 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE,2);
+            }
+            else if (flags & ImGuiWindowFlags_Tooltip)
+            {
+                DrawNineSliceImage(*TooltipPath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE,2);
+                DrawNineSliceImage(*TooltipShadingPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, true);
+                DrawNineSliceImage(*velvetOverlayPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, true);
+                DrawNineSliceImage(*ClothOverlayPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, ImColor{1.0f,1.0f,1.0f,0.15f}, 2, true);
+                
+                DrawNineSliceImage(*TooltipFramePath.get(), window->Pos, window->Size, { 16,16,16,16 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE,2);
+            }
+            else
+            {
+                DrawNineSliceImage(*defaultBackground.get(), *smallFrameMaskPath.get(), window->Pos, window->Size, { 90,90,90,90 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, false);
+                DrawNineSliceImage(*velvetOverlayPath.get(), *smallFrameMaskPath.get(), window->Pos, window->Size, { 90,90,90,90 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, true);
+                DrawNineSliceImage(*smallFramePath.get(), window->Pos, window->Size, { 90,90,90,90 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE,2);
+            }
+
+            bg_draw_list->AddRectFilled(window->Pos, window->Pos + window->Size, bg_col, window_rounding, (flags & ImGuiWindowFlags_NoTitleBar) ? 0 : ImDrawFlags_RoundCornersBottom);
+            
+
+
+            if (window->DockIsActive || (flags & ImGuiWindowFlags_DockNodeHost))
+                bg_draw_list->ChannelsSetCurrent(DOCKING_HOST_DRAW_CHANNEL_FG);
+        }
+        if (window->DockIsActive)
+            window->DockNode->IsBgDrawnThisFrame = true;
+
+        // Title bar
+        // (when docked, DockNode are drawing their own title bar. Individual windows however do NOT set the _NoTitleBar flag,
+        // in order for their pos/size to be matching their undocking state.)
+        if (!(flags & ImGuiWindowFlags_NoTitleBar) && !window->DockIsActive)
+        {
+            ImU32 title_bar_col = ImGui::GetColorU32(title_bar_is_highlight ? ImGuiCol_TitleBgActive : ImGuiCol_TitleBg);
+            //window->DrawList->AddRectFilled(title_bar_rect.Min, title_bar_rect.Max, ImColor(0,0,0,0), window_rounding, ImDrawFlags_RoundCornersTop);
+        }
+
+        // Menu bar
+        if (flags & ImGuiWindowFlags_MenuBar)
+        {
+            ImRect menu_bar_rect = window->MenuBarRect();
+            menu_bar_rect.ClipWith(window->Rect());  // Soft clipping, in particular child window don't have minimum size covering the menu bar so this is useful for them.
+            window->DrawList->AddRectFilled(menu_bar_rect.Min + ImVec2(window_border_size, 0), menu_bar_rect.Max - ImVec2(window_border_size, 0), ImGui::GetColorU32(ImGuiCol_MenuBarBg), (flags & ImGuiWindowFlags_NoTitleBar) ? window_rounding : 0.0f, ImDrawFlags_RoundCornersTop);
+            if (style.FrameBorderSize > 0.0f && menu_bar_rect.Max.y < window->Pos.y + window->Size.y)
+                window->DrawList->AddLine(menu_bar_rect.GetBL(), menu_bar_rect.GetBR(), ImGui::GetColorU32(ImGuiCol_Border), style.FrameBorderSize);
+        }
+
+        // Docking: Unhide tab bar (small triangle in the corner), drag from small triangle to quickly undock
+        ImGuiDockNode* node = window->DockNode;
+        if (window->DockIsActive && node->IsHiddenTabBar() && !node->IsNoTabBar())
+        {
+            float unhide_sz_draw = ImFloor(g.FontSize * 0.70f);
+            float unhide_sz_hit = ImFloor(g.FontSize * 0.55f);
+            ImVec2 p = node->Pos;
+            ImRect r(p, p + ImVec2(unhide_sz_hit, unhide_sz_hit));
+            ImGuiID unhide_id = window->GetID("#UNHIDE");
+            ImGui::KeepAliveID(unhide_id);
+            bool hovered, held;
+            if (ImGui::ButtonBehavior(r, unhide_id, &hovered, &held, ImGuiButtonFlags_FlattenChildren))
+                node->WantHiddenTabBarToggle = true;
+            else if (held && ImGui::IsMouseDragging(0))
+                ImGui::StartMouseMovingWindowOrNode(window, node, true);
+
+            // FIXME-DOCK: Ideally we'd use ImGuiCol_TitleBgActive/ImGuiCol_TitleBg here, but neither is guaranteed to be visible enough at this sort of size..
+            ImU32 col = ImGui::GetColorU32(((held && hovered) || (node->IsFocused && !hovered)) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
+            window->DrawList->AddTriangleFilled(p, p + ImVec2(unhide_sz_draw, 0.0f), p + ImVec2(0.0f, unhide_sz_draw), col);
+        }
+
+        // Scrollbars
+        if (window->ScrollbarX)
+            ImGui::Scrollbar(ImGuiAxis_X);
+        if (window->ScrollbarY)
+            ImGui::Scrollbar(ImGuiAxis_Y);
+
+        // Borders (for dock node host they will be rendered over after the tab bar)
+    }
+}
+
+// Render title text, collapse button, close button
+// When inside a dock node, this is handled in DockNodeCalcTabBarLayout() instead.
+void VictoriaWindow::RenderWindowTitleBarContents(ImGuiWindow* window, const ImRect& title_bar_rect, const char* name, bool* p_open)
+{
+    ImGuiContext& g = *GImGui;
+    ImGuiStyle& style = g.Style;
+    ImGuiWindowFlags flags = window->Flags;
+
+    const bool has_close_button = (p_open != NULL);
+    const bool has_collapse_button = !(flags & ImGuiWindowFlags_NoCollapse) && (style.WindowMenuButtonPosition != ImGuiDir_None);
+
+    // Close & Collapse button are on the Menu NavLayer and don't default focus (unless there's nothing else on that layer)
+    // FIXME-NAV: Might want (or not?) to set the equivalent of ImGuiButtonFlags_NoNavFocus so that mouse clicks on standard title bar items don't necessarily set nav/keyboard ref?
+    const ImGuiItemFlags item_flags_backup = g.CurrentItemFlags;
+    g.CurrentItemFlags |= ImGuiItemFlags_NoNavDefaultFocus;
+    window->DC.NavLayerCurrent = ImGuiNavLayer_Menu;
+    ImFont* headerFont = ImGui::GetIO().Fonts->Fonts[2];
+    ImGui::PushFont(headerFont);
+
+    
+
+    // Layout buttons
+    // FIXME: Would be nice to generalize the subtleties expressed here into reusable code.
+    float pad_l = style.FramePadding.x;
+    float pad_r = style.FramePadding.x;
+    float button_sz = g.FontSize;
+    ImVec2 close_button_pos;
+    ImVec2 collapse_button_pos;
+    if (has_close_button)
+    {
+        pad_r += button_sz;
+        close_button_pos = ImVec2(title_bar_rect.Max.x - pad_r - style.FramePadding.x, title_bar_rect.Min.y);
+    }
+    if (has_collapse_button && style.WindowMenuButtonPosition == ImGuiDir_Right)
+    {
+        pad_r += button_sz;
+        collapse_button_pos = ImVec2(title_bar_rect.Max.x - pad_r - style.FramePadding.x, title_bar_rect.Min.y);
+    }
+    if (has_collapse_button && style.WindowMenuButtonPosition == ImGuiDir_Left)
+    {
+        collapse_button_pos = ImVec2(title_bar_rect.Min.x + pad_l - style.FramePadding.x, title_bar_rect.Min.y);
+        pad_l += button_sz;
+    }
+
+    // Collapse button (submitting first so it gets priority when choosing a navigation init fallback)
+    if (has_collapse_button)
+        if (ImGui::CollapseButton(window->GetID("#COLLAPSE"), collapse_button_pos, NULL))
+            window->WantCollapseToggle = true; // Defer actual collapsing to next frame as we are too far in the Begin() function
+
+    // Close button
+    if (has_close_button)
+        if (ImGui::CloseButton(window->GetID("#CLOSE"), close_button_pos))
+            *p_open = false;
+
+    window->DC.NavLayerCurrent = ImGuiNavLayer_Main;
+    g.CurrentItemFlags = item_flags_backup;
+
+    // Title bar text (with: horizontal alignment, avoiding collapse/close button, optional "unsaved document" marker)
+    // FIXME: Refactor text alignment facilities along with RenderText helpers, this is WAY too much messy code..
+    const float marker_size_x = (flags & ImGuiWindowFlags_UnsavedDocument) ? button_sz * 0.80f : 0.0f;
+    const ImVec2 text_size = ImGui::CalcTextSize(name, NULL, true) + ImVec2(marker_size_x, 0.0f);
+
+    // As a nice touch we try to ensure that centered title text doesn't get affected by visibility of Close/Collapse button,
+    // while uncentered title text will still reach edges correctly.
+    if (pad_l > style.FramePadding.x)
+        pad_l += g.Style.ItemInnerSpacing.x;
+    if (pad_r > style.FramePadding.x)
+        pad_r += g.Style.ItemInnerSpacing.x;
+    if (style.WindowTitleAlign.x > 0.0f && style.WindowTitleAlign.x < 1.0f)
+    {
+        float centerness = ImSaturate(1.0f - ImFabs(style.WindowTitleAlign.x - 0.5f) * 2.0f); // 0.0f on either edges, 1.0f on center
+        float pad_extend = ImMin(ImMax(pad_l, pad_r), title_bar_rect.GetWidth() - pad_l - pad_r - text_size.x);
+        pad_l = ImMax(pad_l, pad_extend * centerness);
+        pad_r = ImMax(pad_r, pad_extend * centerness);
+    }
+
+    ImRect layout_r(title_bar_rect.Min.x + pad_l, title_bar_rect.Min.y, title_bar_rect.Max.x - pad_r, title_bar_rect.Max.y);
+    ImRect clip_r(layout_r.Min.x, layout_r.Min.y, ImMin(layout_r.Max.x + g.Style.ItemInnerSpacing.x, title_bar_rect.Max.x), layout_r.Max.y);
+    if (flags & ImGuiWindowFlags_UnsavedDocument)
+    {
+        ImVec2 marker_pos;
+        marker_pos.x = ImClamp(layout_r.Min.x + (layout_r.GetWidth() - text_size.x) * style.WindowTitleAlign.x + text_size.x, layout_r.Min.x, layout_r.Max.x);
+        marker_pos.y = (layout_r.Min.y + layout_r.Max.y) * 0.5f;
+        if (marker_pos.x > layout_r.Min.x)
+        {
+            ImGui::RenderBullet(window->DrawList, marker_pos, ImGui::GetColorU32(ImGuiCol_Text));
+            clip_r.Max.x = ImMin(clip_r.Max.x, marker_pos.x - (int)(marker_size_x * 0.5f));
+        }
+    }
+    //if (g.IO.KeyShift) window->DrawList->AddRect(layout_r.Min, layout_r.Max, IM_COL32(255, 128, 0, 255)); // [DEBUG]
+    //if (g.IO.KeyCtrl) window->DrawList->AddRect(clip_r.Min, clip_r.Max, IM_COL32(255, 128, 0, 255)); // [DEBUG]
+    ImGui::RenderTextClipped(layout_r.Min, layout_r.Max, name, NULL, &text_size, style.WindowTitleAlign, &clip_r);
+    ImGui::PopFont();
 }

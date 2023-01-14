@@ -391,11 +391,11 @@ void Graphics::SetStyle()
 {
     ImGuiIO& io = ImGui::GetIO();
     RE_LogMessage("Loading Fonts");
-    std::vector< std::filesystem::path> fonts = { Settings::gameDirectory.getSetting() / "game\\fonts\\ZenOldMincho\\ZenOldMincho-Bold.ttf" };
+    std::vector<std::filesystem::path> fonts = { Settings::gameDirectory.getSetting() / "game\\fonts\\EBGaramond\\EBGaramond-Regular.ttf",Settings::gameDirectory.getSetting() / "game\\fonts\\PlayfairDisplay\\PlayfairDisplay-Regular.ttf"};
 
     LoadFont(io, fonts, 0, 16);
     LoadFont(io, fonts, 0, 22);
-    LoadFont(io, fonts, 0, 30);
+    LoadFont(io, fonts, 1, 26);
     //LoadFont(io, fonts, 1, 48);
 
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
@@ -408,7 +408,6 @@ void Graphics::SetStyle()
     {
         io.FontDefault = io.Fonts->Fonts[1];
     }
-    
 
 
     // Setup Dear ImGui style
@@ -419,13 +418,16 @@ void Graphics::SetStyle()
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
         style.WindowRounding = 0.0f;
-        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+        style.Colors[ImGuiCol_WindowBg].w = 0.0f;
     }
+    style.Colors[ImGuiCol_FrameBg] = ImColor{ 0,0,0,51 };
     style.FrameRounding = 4.0f;
-    style.WindowRounding = 8.0f;
+    style.WindowRounding = 0.0f;
+    style.WindowPadding = { 80,0 };
     style.PopupRounding = 4.0f;
     style.WindowMenuButtonPosition = -1;
-    style.ScaleAllSizes(0.8f);
+    style.WindowTitleAlign = { 0.5f,0.5f };
+    style.ScaleAllSizes(1.0f);
 }
 
 // All the ImGui_ImplVulkanH_XXX structures/functions are optional helpers used by the demo.
@@ -444,7 +446,7 @@ void Graphics::SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd)
     }
 
     // Select Surface Format
-    const VkFormat requestSurfaceImageFormat[] = { VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_B8G8R8_UNORM, VK_FORMAT_R8G8B8_UNORM };
+    const VkFormat requestSurfaceImageFormat[] = { VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM };
     const VkColorSpaceKHR requestSurfaceColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
     wd->SurfaceFormat = ImGui_ImplVulkanH_SelectSurfaceFormat(physicalDevice, wd->Surface, requestSurfaceImageFormat, (size_t)IM_ARRAYSIZE(requestSurfaceImageFormat), requestSurfaceColorSpace);
 

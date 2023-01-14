@@ -147,6 +147,7 @@ struct ImGui_ImplVulkan_Data
     VkPipelineLayout            PipelineLayout;
     VkPipeline                  Pipeline;
     VkPipeline                  PipelineOverlay;
+    VkPipeline                  PipelineSet;
     uint32_t                    Subpass;
     VkShaderModule              ShaderModuleVert;
     VkShaderModule              ShaderModuleFrag;
@@ -564,7 +565,7 @@ void ImGui_ImplVulkan_RenderDrawData(ImDrawData* draw_data, VkCommandBuffer comm
 
     // Setup desired Vulkan state
     ImGui_ImplVulkan_SetupRenderState(draw_data, pipeline, command_buffer, rb, fb_width, fb_height);
-    int overlayPipelineBound = false;
+    BlendMode overlayPipelineBound = BlendMode::normal;
 
     // Will project scissor/clipping rectangles into framebuffer space
     ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
@@ -593,21 +594,22 @@ void ImGui_ImplVulkan_RenderDrawData(ImDrawData* draw_data, VkCommandBuffer comm
             {
                 
                 //change the pipeline based on whether or not overlay blending is needed
-                if (pcmd->Overlay)
+                if (pcmd->Overlay != overlayPipelineBound)
                 {
-                    if (!overlayPipelineBound)
+                    switch (pcmd->Overlay)
                     {
+                    case BlendMode::normal:
+                        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, bd->Pipeline);
+                        break;
+
+                    case BlendMode::overlay:
                         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, bd->PipelineOverlay);
-                        overlayPipelineBound = true;
+                        break;
+
+                    default:
+                        break;
                     }
-                }
-                else
-                {
-                    if (overlayPipelineBound)
-                    {
-                        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-                        overlayPipelineBound = false;
-                    }
+                    overlayPipelineBound = pcmd->Overlay;
                 }
 
                 // Project scissor/clipping rectangles into framebuffer space
@@ -633,7 +635,19 @@ void ImGui_ImplVulkan_RenderDrawData(ImDrawData* draw_data, VkCommandBuffer comm
                 VkDescriptorSet alphaMask = (VkDescriptorSet)pcmd->AlphaId;
                 if (alphaMask == nullptr)
                 {
-                    alphaMask = bd->WhiteTextureDescriptorSet;
+                    if (bd->WhiteTextureDescriptorSet)
+                    {
+                        alphaMask = bd->WhiteTextureDescriptorSet;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                    
+                }
+                if (pcmd->TextureId == nullptr)
+                {
+                    continue;
                 }
 
                 // Bind DescriptorSet with font or user texture
@@ -983,7 +997,7 @@ static void ImGui_ImplVulkan_CreatePipeline(VkDevice device, const VkAllocationC
     advancedBlend[0].sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_ADVANCED_STATE_CREATE_INFO_EXT;
     advancedBlend[0].srcPremultiplied = VK_FALSE;
     advancedBlend[0].dstPremultiplied = VK_FALSE;
-    advancedBlend[0].blendOverlap = VK_BLEND_OVERLAP_CONJOINT_EXT;
+    advancedBlend[0].blendOverlap = VK_BLEND_OVERLAP_UNCORRELATED_EXT;
 
     VkPipelineColorBlendStateCreateInfo blend_info = {};
     blend_info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -991,7 +1005,7 @@ static void ImGui_ImplVulkan_CreatePipeline(VkDevice device, const VkAllocationC
     blend_info.pAttachments = color_attachment;
     blend_info.pNext = advancedBlend;
 
-    VkDynamicState dynamic_states[3] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+    VkDynamicState dynamic_states[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
     VkPipelineDynamicStateCreateInfo dynamic_state = {};
     dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamic_state.dynamicStateCount = (uint32_t)IM_ARRAYSIZE(dynamic_states);
@@ -1114,6 +1128,8 @@ void    ImGui_ImplVulkan_DestroyDeviceObjects()
     if (bd->DescriptorSetLayout)  { vkDestroyDescriptorSetLayout(v->Device, bd->DescriptorSetLayout, v->Allocator); bd->DescriptorSetLayout = VK_NULL_HANDLE; }
     if (bd->PipelineLayout)       { vkDestroyPipelineLayout(v->Device, bd->PipelineLayout, v->Allocator); bd->PipelineLayout = VK_NULL_HANDLE; }
     if (bd->Pipeline)             { vkDestroyPipeline(v->Device, bd->Pipeline, v->Allocator); bd->Pipeline = VK_NULL_HANDLE; }
+    if (bd->PipelineOverlay)      { vkDestroyPipeline(v->Device, bd->PipelineOverlay, v->Allocator); bd->Pipeline = VK_NULL_HANDLE; }
+    if (bd->PipelineSet)          { vkDestroyPipeline(v->Device, bd->PipelineSet, v->Allocator); bd->Pipeline = VK_NULL_HANDLE; }
 }
 
 bool    ImGui_ImplVulkan_LoadFunctions(PFN_vkVoidFunction(*loader_func)(const char* function_name, void* user_data), void* user_data)
@@ -1704,7 +1720,7 @@ static void ImGui_ImplVulkan_CreateWindow(ImGuiViewport* viewport)
     //printf("[vulkan] Secondary window selected PresentMode = %d\n", wd->PresentMode);
 
     // Create SwapChain, RenderPass, Framebuffer, etc.
-    wd->ClearEnable = (viewport->Flags & ImGuiViewportFlags_NoRendererClear) ? false : true;
+    wd->ClearEnable = true;
     ImGui_ImplVulkanH_CreateOrResizeWindow(v->Instance, v->PhysicalDevice, v->Device, wd, v->QueueFamily, v->Allocator, (int)viewport->Size.x, (int)viewport->Size.y, v->MinImageCount);
     vd->WindowOwned = true;
 }
@@ -1731,7 +1747,7 @@ static void ImGui_ImplVulkan_SetWindowSize(ImGuiViewport* viewport, ImVec2 size)
     if (vd == nullptr) // This is nullptr for the main viewport (which is left to the user/app to handle)
         return;
     ImGui_ImplVulkan_InitInfo* v = &bd->VulkanInitInfo;
-    vd->Window.ClearEnable = (viewport->Flags & ImGuiViewportFlags_NoRendererClear) ? false : true;
+    vd->Window.ClearEnable = true;
     ImGui_ImplVulkanH_CreateOrResizeWindow(v->Instance, v->PhysicalDevice, v->Device, &vd->Window, v->QueueFamily, v->Allocator, (int)size.x, (int)size.y, v->MinImageCount);
 }
 
@@ -1768,7 +1784,7 @@ static void ImGui_ImplVulkan_RenderWindow(ImGuiViewport* viewport, void*)
             check_vk_result(err);
         }
         {
-            ImVec4 clear_color = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+            ImVec4 clear_color = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
             memcpy(&wd->ClearValue.color.float32[0], &clear_color, 4 * sizeof(float));
 
             VkRenderPassBeginInfo info = {};
@@ -1777,8 +1793,8 @@ static void ImGui_ImplVulkan_RenderWindow(ImGuiViewport* viewport, void*)
             info.framebuffer = fd->Framebuffer;
             info.renderArea.extent.width = wd->Width;
             info.renderArea.extent.height = wd->Height;
-            info.clearValueCount = (viewport->Flags & ImGuiViewportFlags_NoRendererClear) ? 0 : 1;
-            info.pClearValues = (viewport->Flags & ImGuiViewportFlags_NoRendererClear) ? nullptr : &wd->ClearValue;
+            info.clearValueCount = 1;
+            info.pClearValues = &wd->ClearValue;
             vkCmdBeginRenderPass(fd->CommandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
         }
     }

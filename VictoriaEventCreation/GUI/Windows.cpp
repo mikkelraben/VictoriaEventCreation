@@ -44,8 +44,8 @@ void EventTool::Run()
         static float sizeX = 0.0f;
         static float sizeY = 0.0f;
 
-        ImGui::SliderFloat("Size X", &sizeX, -1, 256);
-        ImGui::SliderFloat("Size Y", &sizeY, -1, 256);
+        VecGui::SliderFloat("Size X", sizeX, -1, 256);
+        VecGui::SliderFloat("Size Y", sizeY, -1, 256);
 
 
         if(VecGui::Button("Play",{sizeX,sizeY}))
@@ -53,6 +53,18 @@ void EventTool::Run()
             sound = std::make_unique<Sound>(soundsFile.sounds[selected], soundsFile);
             sound->play();
         }
+        if (sound.get())
+        {
+            if (VecGui::RoundButton("stop", "close", { 47,47 }))
+            {
+                sound->pause();
+            }
+        }
+
+
+        static bool Value = false;
+
+        VecGui::CheckBox("CheckBox", Value);
     }
 
 }
