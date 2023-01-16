@@ -2,17 +2,6 @@
 #include "../Core/Application.h"
 #include "../Sound/BankLoad.h"
 
-class BufferTest : public BaseApp::Window
-{
-public:
-    explicit BufferTest(std::vector<Window*>& applicationWindows) : Window(applicationWindows)
-    {
-        name = "Buffer Test";
-        isWindowOpen = true;
-    }
-    void Run() override;
-};
-
 class EventTool : public BaseApp::Window
 {
 public:
@@ -22,7 +11,7 @@ public:
         isWindowOpen = true;
     }
     void Run() override;
-    void Opened() override;
+    void Properties() override;
 private:
     Sound::SoundSystem soundSystem;
 };
@@ -48,3 +37,15 @@ public:
     }
     void Run() override;
 };
+
+class Properties : public BaseApp::Window
+{
+public:
+    explicit Properties(std::vector<Window*>& applicationWindows) : Window(applicationWindows)
+    {
+        name = "Properties";
+        isWindowOpen = true;
+    }
+    void Run() override;
+};
+

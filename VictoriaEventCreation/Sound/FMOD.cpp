@@ -5,7 +5,12 @@
 #include <Windows.h>
 
 //Core API
+//System
 std::function<FMOD_RESULT(FMOD::System* thisClass, int samplerate, FMOD_SPEAKERMODE speakermode, int numrawspeakers)> FMOD::System::setSoftwareFormat = [](System* thisClass, int samplerate, FMOD_SPEAKERMODE speakermode, int numrawspeakers) { return 1; };
+std::function<FMOD_RESULT(FMOD::System* thisClass, FMOD::ChannelGroup** channelGroup)> FMOD::System::getMasterChannelGroup = [](System* thisClass, ChannelGroup** channelGroup) { return 1; };
+
+//ChannelGroup
+std::function<FMOD_RESULT(FMOD::ChannelGroup* thisClass, float volume)> FMOD::ChannelGroup::setVolume = [](ChannelGroup* thisClass, float volume) { return 1; };
 
 
 //Studio API
@@ -89,6 +94,10 @@ bool FMOD::FunctionLoader::loadFunctions()
 
     //Core System
     System::setSoftwareFormat = LoadFunction<FMOD_RESULT, System*, int, FMOD_SPEAKERMODE, int>("FMOD_System_SetSoftwareFormat", coreDLL);
+    System::getMasterChannelGroup = LoadFunction<FMOD_RESULT, System*, ChannelGroup**>("FMOD_System_GetMasterChannelGroup", coreDLL);
+
+    //Core ChannelGroup
+    ChannelGroup::setVolume = LoadFunction<FMOD_RESULT, ChannelGroup*, float>("FMOD_ChannelGroup_SetVolume", coreDLL);
 
     //Studio System
     Studio::System::Create = LoadFunction<FMOD_RESULT, Studio::System**, unsigned int>("FMOD_Studio_System_Create", studioDLL);

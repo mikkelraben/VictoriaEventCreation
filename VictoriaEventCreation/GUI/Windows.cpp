@@ -54,8 +54,9 @@ void EventTool::Run()
 
 }
 
-void EventTool::Opened()
+void EventTool::Properties()
 {
+    ImGui::Text("You have selected The Event Tool");
 }
 
 void Console::Run()
@@ -74,14 +75,35 @@ void Console::Run()
 void SettingsEditor::Run()
 {
     Settings::gameDirectory.editor();
+    Settings::volume.editor();
 
     if (VecGui::Button("Save Settings"))
     {
-        if (Settings::gameDirectory.tryChangeSetting())
+
+        bool allSettingsCorrect = true;
+        allSettingsCorrect &= Settings::gameDirectory.tryChangeSetting();
+        allSettingsCorrect &= Settings::volume.tryChangeSetting();
+
+        if (allSettingsCorrect)
         {
             Settings::SaveSettings();
         }
     }
 
-    unsavedChanges = !Settings::gameDirectory.newSettingEqual();
+    unsavedChanges = false;
+    unsavedChanges |= !Settings::gameDirectory.newSettingEqual();
+    unsavedChanges |= !Settings::volume.newSettingEqual();
+}
+
+void Properties::Run()
+{
+    for (auto& window : windows)
+    {
+        if (window->isSelected)
+        {
+            window->Properties();
+            return;
+        }
+    }
+    ImGui::Text("This should not appear unless you are selecting a debug window");
 }

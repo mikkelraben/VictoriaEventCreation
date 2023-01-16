@@ -2,8 +2,19 @@
 #include "Settings.h"
 #include "yaml-cpp/yaml.h"
 #include "FilesysHelper.h"
+#include "../Sound/BankLoad.h"
 
-Setting<std::filesystem::path> Settings::gameDirectory("","Game Directory");
+//Setting Callback
+void setNewVolume();
+
+
+Setting<std::filesystem::path> Settings::gameDirectory("", "Game Directory", std::function<void(void)>());
+Setting<float> Settings::volume(1.0f, "Volume", setNewVolume);
+
+void setNewVolume()
+{
+    Sound::SoundSystem::setVolume(Settings::volume.getSetting());
+}
 
 void Settings::LoadSettings()
 {
@@ -22,7 +33,8 @@ void Settings::LoadSettings()
 
     try
     {
-        gameDirectory = Setting(std::filesystem::path(nodes[gameDirectory.settingName].as<std::string>()), gameDirectory.settingName);
+        gameDirectory = Setting(std::filesystem::path(nodes[gameDirectory.settingName].as<std::string>()), gameDirectory.settingName,gameDirectory.settingChanged);
+        volume = Setting(nodes[volume.settingName].as<float>(), volume.settingName,volume.settingChanged);
     }
     catch (const YAML::Exception& e)
     {
@@ -40,6 +52,7 @@ void Settings::SaveSettings()
         YAML::Emitter out;
         out << YAML::BeginMap;
         out << YAML::Key << gameDirectory.settingName << YAML::Value << gameDirectory.getSetting().string();
+        out << YAML::Key << volume.settingName << YAML::Value << volume.getSetting();
 
         out << YAML::EndMap;
 

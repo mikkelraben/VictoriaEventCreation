@@ -1,9 +1,10 @@
 #pragma once
+#include "../GUI/Widgets.h"
 
 template<typename T>
 struct Setting
 {
-    Setting(T defaultSetting, std::string name) : setting(defaultSetting), newSetting(defaultSetting), settingName(name) {};
+    Setting(T defaultSetting, std::string name, std::function<void(void)> SettingChangedCallback) : setting(defaultSetting), newSetting(defaultSetting), settingName(name), settingChanged(SettingChangedCallback) {};
     bool newSettingValid() { return true; }
     bool tryChangeSetting()
     {
@@ -11,11 +12,17 @@ struct Setting
         {
             insertNewSetting();
             showIncorrect = false;
+            if (settingChanged)
+            {
+                settingChanged();
+            }
             return true;
         } 
         showIncorrect = true;
         return false;
     }
+
+    std::function<void(void)> settingChanged;
 
     bool newSettingEqual() {
         return setting == newSetting;
@@ -37,6 +44,7 @@ class Settings
 public:
     //TODO: should be changed to an array of param based setting
     static Setting<std::filesystem::path> gameDirectory;
+    static Setting<float> volume;
 
     static void LoadSettings();
     static void SaveSettings();
@@ -62,20 +70,31 @@ inline void Setting<std::filesystem::path>::editor()
     {
         ImGui::PushStyleColor(ImGuiCol_FrameBg, { (float)134 / 255,(float)34 / 255,(float)34 / 255,(float)138 / 255 });
     }
+
     std::string file = newSetting.string();
     ImGui::InputText(("##" + settingName).c_str(), &file);
+    newSetting = file;
+
     if (showIncorrect)
     {
         ImGui::PopStyleColor();
     }
-
-    newSetting = file;
 }
 
 template<>
-inline bool Setting<std::filesystem::path>::newSettingEqual()
+inline void Setting<float>::editor()
 {
-    return setting.compare(newSetting) == 0;
+    ImGui::Text(settingName.c_str());
+    if (showIncorrect)
+    {
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, { (float)134 / 255,(float)34 / 255,(float)34 / 255,(float)138 / 255 });
+    }
+    
+    VecGui::SliderFloat("##" + settingName, newSetting, 0, 1);
+    
+    if (showIncorrect)
+    {
+        ImGui::PopStyleColor();
+    }
 }
-
 

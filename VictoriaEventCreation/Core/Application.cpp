@@ -36,6 +36,9 @@ namespace BaseApp {
         SettingsEditor* settings = new SettingsEditor(windows);
         windows.push_back(settings);
 
+        Properties* properties = new Properties(windows);
+        windows.push_back(properties);
+
         Sound::SoundSystem::InitSoundSystem();
 
         Run();
@@ -166,12 +169,18 @@ namespace BaseApp {
             }
         }
 
+        //updated isSelected
+        isSelected = ImGui::IsWindowFocused();
         //call virtual function
         Run();
 
         ImGui::End();
 
 
+    }
+    void Window::Properties()
+    {
+        ImGui::Text("No Properties");
     }
 }
 

@@ -34,6 +34,10 @@ namespace BaseApp {
         //call every frame
         virtual void Execute();
 
+        virtual void Properties();
+
+        bool isSelected = false;
+
         //a vector of windows from application class
         std::vector<Window*>& windows;
 

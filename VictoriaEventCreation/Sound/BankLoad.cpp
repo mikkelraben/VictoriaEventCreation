@@ -31,7 +31,7 @@ namespace Sound
 
         RE_ASSERT(system->intialize(system, 1024, 0, 0, nullptr));
 
-        
+        setVolume(Settings::volume.getSetting());
 
         std::filesystem::path banksFolder = Settings::gameDirectory.getSetting() / "game\\sound\\banks";
 
@@ -103,6 +103,15 @@ namespace Sound
 
         system->release(system);
     }
+
+    void SoundSystem::setVolume(float volume)
+    {
+        FMOD::ChannelGroup* channelGroup;
+        coreSystem->getMasterChannelGroup(coreSystem, &channelGroup);
+        channelGroup->setVolume(channelGroup, volume);
+    }
+
+    
 
     void Event::Play()
     {

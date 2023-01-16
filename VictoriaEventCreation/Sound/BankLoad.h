@@ -20,6 +20,7 @@ namespace Sound
         static std::vector<Event> events;
         static void InitSoundSystem();
         static void DeleteSoundSystem();
+        static void setVolume(float volume);
 
         //call every frame
         static void Update();
