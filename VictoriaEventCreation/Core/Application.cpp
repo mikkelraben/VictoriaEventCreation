@@ -5,6 +5,7 @@
 #include "Windows.h"
 #include "../GUI/Windows.h"
 #include <GLFW/glfw3.h>
+#include "../Sound/BankLoad.h"
 
 namespace BaseApp {
     static void glfw_error_callback(int error, const char* description)
@@ -35,7 +36,7 @@ namespace BaseApp {
         SettingsEditor* settings = new SettingsEditor(windows);
         windows.push_back(settings);
 
-
+        Sound::SoundSystem::InitSoundSystem();
 
         Run();
     }
@@ -111,7 +112,10 @@ namespace BaseApp {
 
             ImGui::Render();
             graphics.RenderFrame();
+            Sound::SoundSystem::Update();
         }
+
+        Sound::SoundSystem::DeleteSoundSystem();
     }
 
     Window::Window(std::vector<Window*>& applicationWindows) : windows(applicationWindows)

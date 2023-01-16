@@ -2499,6 +2499,7 @@ enum class BlendMode
 {
     normal = 0,
     overlay = 1,
+    color_dodge = 2
 };
 
 // Typically, 1 command = 1 GPU draw call (unless command is a callback)

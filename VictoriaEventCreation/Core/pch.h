@@ -17,5 +17,5 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_stdlib.h"
 #include "imgui/implot.h"
-#include "Log.h"
+#include "Macros.h"
 #include "Settings.h"

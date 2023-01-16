@@ -889,7 +889,7 @@ ImRect ImGui::GetWindowScrollbarRect(ImGuiWindow* window, ImGuiAxis axis)
     if (axis == ImGuiAxis_X)
         return ImRect(inner_rect.Min.x, ImMax(outer_rect.Min.y, outer_rect.Max.y - border_size - scrollbar_size), inner_rect.Max.x, outer_rect.Max.y);
     else
-        return ImRect(ImMax(outer_rect.Min.x, inner_clip_rect.Max.x), inner_rect.Min.y, inner_clip_rect.Max.x + border_size + scrollbar_size, inner_clip_rect.Max.y-50);
+        return ImRect(ImMax(outer_rect.Min.x, inner_clip_rect.Max.x), inner_rect.Min.y, inner_clip_rect.Max.x + border_size + scrollbar_size, inner_clip_rect.Max.y);
 }
 
 void ImGui::Scrollbar(ImGuiAxis axis)

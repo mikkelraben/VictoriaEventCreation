@@ -4,6 +4,7 @@
 #include "../Core/imgui/imgui_internal.h"
 #include "../Core/imgui/imgui_impl_vulkan.h"
 #include "../Core/ResourceHandler.h"
+#include "Widgets.h"
 
 static inline ImVec2 operator+(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x + rhs.x, lhs.y + rhs.y); }
 static inline ImVec2 operator-(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x - rhs.x, lhs.y - rhs.y); }
@@ -111,8 +112,8 @@ void PrimNineGridUVAlphaMask(const ImVec2& startPos, const ImVec2& endPos, const
             ImVec2 size = { endPos.x - startPos.x,endPos.y - startPos.y };
             ImVec2 offset = { position.x - startPos.x,position.y - startPos.y };
 
-            uv.x = offset.x / size.x;
-            uv.y = offset.y / size.y;
+            uv.x = offset.x / size.x * uv_end.x;
+            uv.y = offset.y / size.y * uv_end.y;
 
             VertexWrite[x * 4 + y].pos = position; VertexWrite[x * 4 + y].alphaUV = uvAlpha; VertexWrite[x * 4 + y].col = col; VertexWrite[x * 4 + y].uv = uv;
         }
@@ -151,7 +152,7 @@ void PrimRectUVAlpha(const ImVec2& startPos, const ImVec2& endPos, const ImVec2&
 }
 
 
-void DrawNineSliceImage(Texture& texture, ImVec2 pos, ImVec2 size, ImVec4 middleSlice, ImVec2 uvMin, ImVec2 uvMax, ImColor color, float scale)
+void DrawNineSliceImage(Texture& texture, ImVec2 pos, ImVec2 size, ImVec4 middleSlice, ImVec2 uvMin, ImVec2 uvMax, ImColor color, float scale, BlendMode colorBlend)
 {
     auto draw_list = ImGui::GetWindowDrawList();
 
@@ -175,7 +176,7 @@ void DrawNineSliceImage(Texture& texture, ImVec2 pos, ImVec2 size, ImVec4 middle
 
 }
 
-void DrawNineSliceImage(Texture& texture, Texture& alphaMask, ImVec2 pos, ImVec2 size, ImVec4 middleSlice, ImVec2 uvMin, ImVec2 uvMax, ImVec2 uvAlphaMin, ImVec2 uvAlphaMax,ImColor color, float scale, bool overlay)
+void DrawNineSliceImage(Texture& texture, Texture& alphaMask, ImVec2 pos, ImVec2 size, ImVec4 middleSlice, ImVec2 uvMin, ImVec2 uvMax, ImVec2 uvAlphaMin, ImVec2 uvAlphaMax, ImColor color, float scale, BlendMode colorBlend)
 {
     auto draw_list = ImGui::GetWindowDrawList();
 
@@ -193,10 +194,7 @@ void DrawNineSliceImage(Texture& texture, Texture& alphaMask, ImVec2 pos, ImVec2
     draw_list->PrimReserve(54, 16);
     PrimNineGridUVAlphaMask(pos, pos + size, middleSlice,uvAlphaMin,middleUvSlice,uvAlphaMax,uvMin,uvMax, color, scale);
     draw_list->CmdBuffer.back().AlphaId = alphaMask.textureID;
-    if (overlay)
-    {
-        draw_list->CmdBuffer.back().Overlay = BlendMode::overlay;
-    }
+    draw_list->CmdBuffer.back().Overlay = colorBlend;
 
 
     if (push_texture_id)
@@ -204,7 +202,7 @@ void DrawNineSliceImage(Texture& texture, Texture& alphaMask, ImVec2 pos, ImVec2
 
 }
 
-void DrawImageAlphaMask(Texture& texture, Texture& alphamask,const ImVec2& p_min, const ImVec2& p_max, const ImVec2& uv_min, const ImVec2& uv_max, const ImVec2& uv_a_min, const ImVec2& uv_a_max, bool overlay)
+void DrawImageAlphaMask(Texture& texture, Texture& alphamask, const ImVec2& p_min, const ImVec2& p_max, const ImVec2& uv_min, const ImVec2& uv_max, const ImVec2& uv_a_min, const ImVec2& uv_a_max, BlendMode colorBlend)
 {
     auto draw_list = ImGui::GetWindowDrawList();
 
@@ -215,10 +213,7 @@ void DrawImageAlphaMask(Texture& texture, Texture& alphamask,const ImVec2& p_min
     draw_list->PrimReserve(6, 4);
     PrimRectUVAlpha(p_min, p_max, uv_min, uv_max, uv_a_min, uv_a_max, IM_COL32_WHITE);
     draw_list->CmdBuffer.back().AlphaId = alphamask.textureID;
-    if (overlay)
-    {
-        draw_list->CmdBuffer.back().Overlay = BlendMode::overlay;
-    }
+    draw_list->CmdBuffer.back().Overlay = colorBlend;
 
     if (push_texture_id)
         draw_list->PopTextureID();
@@ -226,20 +221,26 @@ void DrawImageAlphaMask(Texture& texture, Texture& alphamask,const ImVec2& p_min
 
 void VictoriaWindow::RenderWindowDecorations(ImGuiWindow* window, const ImRect& title_bar_rect, bool title_bar_is_highlight, bool handle_borders_and_resize_grips, int resize_grip_count, const ImU32 resize_grip_col[4], float resize_grip_draw_size)
 {
-    const static auto mainTexturePath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\backgrounds\\popup_bg_frame.dds");
-    const static auto backgroundTexturePath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\backgrounds\\popup_bg.dds");
-    const static auto velvetOverlayPath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\textures\\velvet_texture.dds");
+    const static auto mainTexturePath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\popup_bg_frame.dds");
+    const static auto backgroundTexturePath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\popup_bg.dds");
+    const static auto velvetOverlayPath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\textures\\velvet_texture.dds");
     
-    const static auto defaultBackground = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\backgrounds\\default_bg.dds");
-    const static auto smallFramePath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\backgrounds\\bg_frame_small.dds");
-    const static auto smallFrameMaskPath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\backgrounds\\bg_frame_small_mask.dds");
-    
-    
+    const static auto defaultBackground = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\default_bg.dds");
+    const static auto smallFramePath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\bg_frame_small.dds");
+    const static auto smallFrameMaskPath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\bg_frame_small_mask.dds");
 
-    const static auto TooltipPath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\tooltip\\tooltip_bg.dds");
-    const static auto TooltipFramePath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\tooltip\\tooltip_frame.dds");
-    const static auto TooltipShadingPath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\backgrounds\\default_bg_shading.dds");
-    const static auto ClothOverlayPath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\textures\\cloth_texture.dds");
+    const static auto TooltipPath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\tooltip\\tooltip_bg.dds");
+    const static auto TooltipFramePath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\tooltip\\tooltip_frame.dds");
+    const static auto TooltipShadingPath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\default_bg_shading.dds");
+    const static auto ClothOverlayPath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\textures\\cloth_texture.dds");
+
+    const static auto headerMask = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\popup_bg_frame_mask.dds");
+    const static auto headerColor = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\header_color.dds");
+    const static auto headerShading = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\top_header_bg_shading.dds");
+    const static auto FancyPattern2 = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\fancy_pattern_2.dds");
+    const static auto HeaderDivider = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\popup_header_divider.dds");
+
+
 
     ImGuiContext& g = *GImGui;
     ImGuiStyle& style = g.Style;
@@ -307,28 +308,66 @@ void VictoriaWindow::RenderWindowDecorations(ImGuiWindow* window, const ImRect& 
             if (window->DockIsActive || (flags & ImGuiWindowFlags_DockNodeHost))
                 bg_draw_list->ChannelsSetCurrent(DOCKING_HOST_DRAW_CHANNEL_BG);
             
-            ImGuiWindowFlags IsChild = ImGuiWindowFlags_ChildMenu | ImGuiWindowFlags_Popup | ImGuiWindowFlags_ChildWindow | ImGuiWindowFlags_Tooltip;
-            if (!(flags & IsChild))
+            if (!(window->DC.ChildWindows.Size == 1 && window->DockOrder == -1 && window->ViewportId == 0x11111111))
             {
-                DrawNineSliceImage(*backgroundTexturePath.get(), window->Pos, window->Size, { 180,180,180,180 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE,2);
-                DrawNineSliceImage(*velvetOverlayPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 180,180,180,180 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, true);
-                DrawNineSliceImage(*mainTexturePath.get(), window->Pos, window->Size, { 180,180,180,180 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE,2);
+                ImGuiWindowFlags IsChild = ImGuiWindowFlags_ChildMenu | ImGuiWindowFlags_Popup | ImGuiWindowFlags_ChildWindow | ImGuiWindowFlags_Tooltip;
+                ImGuiWindowFlags isDock = ImGuiWindowFlags_DockNodeHost;
+
+                //background
+                if (!(flags & IsChild))
+                {
+                    DrawNineSliceImage(*backgroundTexturePath.get(), window->Pos, window->Size, { 162,162,162,162 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::normal);
+                    DrawNineSliceImage(*velvetOverlayPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 162,162,162,162 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::overlay);
+                }
+                else if (flags & ImGuiWindowFlags_Tooltip)
+                {
+                    DrawNineSliceImage(*TooltipPath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::normal);
+                    DrawNineSliceImage(*TooltipShadingPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::overlay);
+                    DrawNineSliceImage(*velvetOverlayPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::overlay);
+                    DrawNineSliceImage(*ClothOverlayPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.15f }, 2, BlendMode::overlay);
+                }
+                else
+                {
+                    DrawNineSliceImage(*defaultBackground.get(), *smallFrameMaskPath.get(), window->Pos, window->Size, { 90,90,90,90 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::normal);
+                    DrawNineSliceImage(*velvetOverlayPath.get(), *smallFrameMaskPath.get(), window->Pos, window->Size, { 90,90,90,90 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::overlay);
+                }
+
+                //Header Background
+                if (!(flags & ImGuiWindowFlags_NoTitleBar))
+                {
+                    float headerWidth = window->TitleBarRect().GetSize().x;
+                    float headerHeight = window->TitleBarRect().GetSize().y;
+
+                    DrawNineSliceImage(*headerColor.get(), *headerMask.get(), window->TitleBarRect().Min, window->TitleBarRect().GetSize(), { 162,162,162,162 }, { 0,0 }, { headerWidth / headerColor.get()->width,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::normal);
+                    DrawNineSliceImage(*velvetOverlayPath.get(), *headerMask.get(), window->TitleBarRect().Min, window->TitleBarRect().GetSize(), { 162,162,162,162 }, { 0,0 }, { headerWidth / velvetOverlayPath.get()->width * 2.0f ,headerHeight / velvetOverlayPath.get()->height * 2.0f }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.1f }, 2, BlendMode::overlay);
+                    DrawNineSliceImage(*headerShading.get(), *headerMask.get(), window->TitleBarRect().Min, window->TitleBarRect().GetSize(), { 162,162,162,162 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.3f }, 2, BlendMode::overlay);
+                    DrawNineSliceImage(*FancyPattern2.get(), *headerMask.get(), window->TitleBarRect().Min, window->TitleBarRect().GetSize(), { 162,162,162,162 }, { 0,0 }, { headerWidth / FancyPattern2.get()->width * 2.0f,headerHeight / FancyPattern2.get()->height * 2.0f }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.2f }, 2, BlendMode::overlay);
+                    DrawNineSliceImage(*ClothOverlayPath.get(), *headerMask.get(), window->TitleBarRect().Min, window->TitleBarRect().GetSize(), { 162,162,162,162 }, { 0,0 }, { headerWidth / ClothOverlayPath.get()->width * 2,headerHeight / ClothOverlayPath.get()->height * 2 }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.1f }, 2, BlendMode::overlay);
+                    
+                    
+                    //DrawNineSliceImage(*HeaderDivider.get(), *headerMask.get(), { window->TitleBarRect().Min.x,window->TitleBarRect().Max.y - 12 }, { window->TitleBarRect().Max.x,8 }, { 162,162,162,162 }, { 0,0 }, { headerWidth / HeaderDivider.get()->width * 2, 1 }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.1f }, 2, BlendMode::overlay);
+                    
+                    
+                    VecGui::Image({ window->TitleBarRect().Min.x,window->TitleBarRect().Max.y - 12 }, *HeaderDivider.get(), { window->TitleBarRect().GetSize().x-16,8}, {0,0}, {headerWidth / HeaderDivider.get()->width * 2, 1}, ImColor{1.0f,1.0f,1.0f,1.0f}, true, BlendMode::normal);
+                }
+
+                //Foreground
+                if (!(flags & IsChild))
+                {
+                    DrawNineSliceImage(*mainTexturePath.get(), window->Pos, window->Size, { 162,162,162,162 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::normal);
+                }
+                else if (flags & ImGuiWindowFlags_Tooltip)
+                {
+                    DrawNineSliceImage(*TooltipFramePath.get(), window->Pos, window->Size, { 16,16,16,16 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::normal);
+                }
+                else
+                {
+                    DrawNineSliceImage(*smallFramePath.get(), window->Pos, window->Size, { 90,90,90,90 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::normal);
+                }
+
+
             }
-            else if (flags & ImGuiWindowFlags_Tooltip)
-            {
-                DrawNineSliceImage(*TooltipPath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE,2);
-                DrawNineSliceImage(*TooltipShadingPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, true);
-                DrawNineSliceImage(*velvetOverlayPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, true);
-                DrawNineSliceImage(*ClothOverlayPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, ImColor{1.0f,1.0f,1.0f,0.15f}, 2, true);
-                
-                DrawNineSliceImage(*TooltipFramePath.get(), window->Pos, window->Size, { 16,16,16,16 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE,2);
-            }
-            else
-            {
-                DrawNineSliceImage(*defaultBackground.get(), *smallFrameMaskPath.get(), window->Pos, window->Size, { 90,90,90,90 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, false);
-                DrawNineSliceImage(*velvetOverlayPath.get(), *smallFrameMaskPath.get(), window->Pos, window->Size, { 90,90,90,90 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, true);
-                DrawNineSliceImage(*smallFramePath.get(), window->Pos, window->Size, { 90,90,90,90 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE,2);
-            }
+
 
             bg_draw_list->AddRectFilled(window->Pos, window->Pos + window->Size, bg_col, window_rounding, (flags & ImGuiWindowFlags_NoTitleBar) ? 0 : ImDrawFlags_RoundCornersBottom);
             
@@ -406,16 +445,21 @@ void VictoriaWindow::RenderWindowTitleBarContents(ImGuiWindow* window, const ImR
     const ImGuiItemFlags item_flags_backup = g.CurrentItemFlags;
     g.CurrentItemFlags |= ImGuiItemFlags_NoNavDefaultFocus;
     window->DC.NavLayerCurrent = ImGuiNavLayer_Menu;
+    
+
+
+
+
+
     ImFont* headerFont = ImGui::GetIO().Fonts->Fonts[2];
     ImGui::PushFont(headerFont);
-
     
 
     // Layout buttons
     // FIXME: Would be nice to generalize the subtleties expressed here into reusable code.
     float pad_l = style.FramePadding.x;
     float pad_r = style.FramePadding.x;
-    float button_sz = g.FontSize;
+    float button_sz = 47;
     ImVec2 close_button_pos;
     ImVec2 collapse_button_pos;
     if (has_close_button)
@@ -439,10 +483,24 @@ void VictoriaWindow::RenderWindowTitleBarContents(ImGuiWindow* window, const ImR
         if (ImGui::CollapseButton(window->GetID("#COLLAPSE"), collapse_button_pos, NULL))
             window->WantCollapseToggle = true; // Defer actual collapsing to next frame as we are too far in the Begin() function
 
+
+
+    const static auto background = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\round_button_bg.dds");
+
     // Close button
     if (has_close_button)
-        if (ImGui::CloseButton(window->GetID("#CLOSE"), close_button_pos))
+    {
+        ImVec2 position = ImGui::GetCursorScreenPos();
+        close_button_pos = close_button_pos + ImVec2{ 0,14 };
+        ImGui::SetCursorScreenPos(close_button_pos);
+
+
+        VecGui::Image(close_button_pos - ImVec2{ 3,3 }, * background.get(), {53,53}, {0,0}, {1,1}, {255,255,255,255}, true);
+        if (VecGui::RoundButton("#CLOSE", "close", { 47,47 }))
             *p_open = false;
+
+        ImGui::SetCursorScreenPos(position);
+    }
 
     window->DC.NavLayerCurrent = ImGuiNavLayer_Main;
     g.CurrentItemFlags = item_flags_backup;

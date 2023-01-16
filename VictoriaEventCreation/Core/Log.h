@@ -1,9 +1,5 @@
 #pragma once
 
-#define RE_LogMessage(message) Log::LogMessage("Log: ",message)
-#define RE_LogWarning(message) Log::LogMessage("Warning: ",message)
-#define RE_LogError(message) Log::LogMessage("Error: ",message)
-
 struct LogEntry
 {
 	std::string type;

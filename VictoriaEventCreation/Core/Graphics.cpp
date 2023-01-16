@@ -391,11 +391,11 @@ void Graphics::SetStyle()
 {
     ImGuiIO& io = ImGui::GetIO();
     RE_LogMessage("Loading Fonts");
-    std::vector<std::filesystem::path> fonts = { Settings::gameDirectory.getSetting() / "game\\fonts\\EBGaramond\\EBGaramond-Regular.ttf",Settings::gameDirectory.getSetting() / "game\\fonts\\PlayfairDisplay\\PlayfairDisplay-Regular.ttf"};
+    std::vector<std::filesystem::path> fonts = { Settings::gameDirectory.getSetting() / "game\\fonts\\EBGaramond\\EBGaramond-Regular.ttf",Settings::gameDirectory.getSetting() / "game\\fonts\\PlayfairDisplay\\PlayfairDisplay-Bold.ttf"};
 
     LoadFont(io, fonts, 0, 16);
     LoadFont(io, fonts, 0, 22);
-    LoadFont(io, fonts, 1, 26);
+    LoadFont(io, fonts, 1, 30);
     //LoadFont(io, fonts, 1, 48);
 
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls

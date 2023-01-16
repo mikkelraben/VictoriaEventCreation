@@ -1,35 +1,32 @@
 #pragma once
-namespace Bank
-{
-    struct Packet
-    {
-        int offset = 0;
-        int granulePosition = 0;
-    };
+#include "FMOD.h"
 
-    class Sound
+namespace Sound
+{
+    class Event
     {
     public:
         std::string name;
-        int offset;
-        int samples;
-        int channels;
-        unsigned int crc32Hash;
-        std::vector<Packet> pages;
+        FMOD::Studio::EventInstance* instance;
+        void Play();
+        void Stop();
+    private:
+
     };
 
-    class File
+    class SoundSystem
     {
     public:
-        explicit File(const std::filesystem::path newPath) : path{ newPath } {};
-        std::filesystem::path path;
-        std::mutex soundsMutex;
-        std::vector<Sound> sounds;
-        void ParseBankFile();
-        long long startData;
-    private:
-        void ReadWavs(std::basic_ifstream<std::byte>& file);
-        void ReadSoundHeader(std::basic_ifstream<std::byte>& file);
-        void ReadNumberOfWavs(std::basic_ifstream<std::byte>& file);
+        static std::vector<Event> events;
+        static void InitSoundSystem();
+        static void DeleteSoundSystem();
+
+        //call every frame
+        static void Update();
+
+        static FMOD::Studio::System* system;
+        static FMOD::System* coreSystem;
+        static std::vector<FMOD::Studio::Bank*> banks;
+        static std::vector<FMOD::Studio::EventDescription*> eventVector;
     };
 }

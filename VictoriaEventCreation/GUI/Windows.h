@@ -1,6 +1,6 @@
 #pragma once
 #include "../Core/Application.h"
-#include "../Sound/Sound.h"
+#include "../Sound/BankLoad.h"
 
 class BufferTest : public BaseApp::Window
 {
@@ -24,9 +24,7 @@ public:
     void Run() override;
     void Opened() override;
 private:
-    Bank::File soundsFile = Bank::File(Settings::gameDirectory.getSetting() / "game\\sound\\banks" / "Events.bank");
-    std::unique_ptr<Sound> sound;
-    std::jthread soundLoadThread;
+    Sound::SoundSystem soundSystem;
 };
 
 class Console : public BaseApp::Window

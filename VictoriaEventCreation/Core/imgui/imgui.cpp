@@ -7287,24 +7287,30 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
         const ImRect title_bar_rect = normal_title_bar_rect;
         window->OuterRectClipped = outer_rect;
 
-        ImRect margins = { 0,0,0,40 };
+        ImRect margins = { 0,0,0,20 };
         if (flags & (ImGuiWindowFlags_Tooltip | ImGuiWindowFlags_ChildWindow | ImGuiWindowFlags_ChildMenu))
         {
-            margins = { 0,20,0,0 };
-            window->WindowPadding = { 20,0 };
+            margins = { 0,12,0,0 };
+          window->WindowPadding = { 10,0 };
         }
 
         if (flags & (ImGuiWindowFlags_ChildWindow))
         {
-            margins = { 0,20,0,20 };
-            window->WindowPadding = { 20,0 };
+            margins = { 0,12,0,20 };
+            window->WindowPadding = { 10,0 };
         }
 
 
         if (flags & (ImGuiWindowFlags_Popup))
         {
-            margins = { 0,20,0,20 };
-            window->WindowPadding = { 20,0 };
+            margins = { 0,12,0,10 };
+            window->WindowPadding = { 12,0 };
+        }
+
+        if ((window->DC.ChildWindows.Size == 1 && window->DockOrder == -1 && window->ViewportId == 0x11111111))
+        {
+            margins = { 0,0,0,0 };
+            window->WindowPadding = { 0,0 };
         }
 
 
@@ -7974,9 +7980,9 @@ static ImGuiWindow* GetCombinedRootWindow(ImGuiWindow* window, bool popup_hierar
         window = window->RootWindow;
         if (popup_hierarchy)
             window = window->RootWindowPopupTree;
-		if (dock_hierarchy)
-			window = window->RootWindowDockTree;
-	}
+        if (dock_hierarchy)
+            window = window->RootWindowDockTree;
+    }
     return window;
 }
 

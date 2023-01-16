@@ -147,7 +147,7 @@ struct ImGui_ImplVulkan_Data
     VkPipelineLayout            PipelineLayout;
     VkPipeline                  Pipeline;
     VkPipeline                  PipelineOverlay;
-    VkPipeline                  PipelineSet;
+    VkPipeline                  PipelineColorDodge;
     uint32_t                    Subpass;
     VkShaderModule              ShaderModuleVert;
     VkShaderModule              ShaderModuleFrag;
@@ -604,6 +604,10 @@ void ImGui_ImplVulkan_RenderDrawData(ImDrawData* draw_data, VkCommandBuffer comm
 
                     case BlendMode::overlay:
                         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, bd->PipelineOverlay);
+                        break;
+
+                    case BlendMode::color_dodge:
+                        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, bd->PipelineColorDodge);
                         break;
 
                     default:
@@ -1092,6 +1096,7 @@ bool ImGui_ImplVulkan_CreateDeviceObjects()
 
     ImGui_ImplVulkan_CreatePipeline(v->Device, v->Allocator, v->PipelineCache, bd->RenderPass, v->MSAASamples, &bd->Pipeline, bd->Subpass, VK_BLEND_OP_ADD);
     ImGui_ImplVulkan_CreatePipeline(v->Device, v->Allocator, v->PipelineCache, bd->RenderPass, v->MSAASamples, &bd->PipelineOverlay, bd->Subpass, VK_BLEND_OP_OVERLAY_EXT);
+    ImGui_ImplVulkan_CreatePipeline(v->Device, v->Allocator, v->PipelineCache, bd->RenderPass, v->MSAASamples, &bd->PipelineColorDodge, bd->Subpass, VK_BLEND_OP_COLORDODGE_EXT);
 
     return true;
 }
@@ -1129,7 +1134,7 @@ void    ImGui_ImplVulkan_DestroyDeviceObjects()
     if (bd->PipelineLayout)       { vkDestroyPipelineLayout(v->Device, bd->PipelineLayout, v->Allocator); bd->PipelineLayout = VK_NULL_HANDLE; }
     if (bd->Pipeline)             { vkDestroyPipeline(v->Device, bd->Pipeline, v->Allocator); bd->Pipeline = VK_NULL_HANDLE; }
     if (bd->PipelineOverlay)      { vkDestroyPipeline(v->Device, bd->PipelineOverlay, v->Allocator); bd->Pipeline = VK_NULL_HANDLE; }
-    if (bd->PipelineSet)          { vkDestroyPipeline(v->Device, bd->PipelineSet, v->Allocator); bd->Pipeline = VK_NULL_HANDLE; }
+    if (bd->PipelineColorDodge)          { vkDestroyPipeline(v->Device, bd->PipelineColorDodge, v->Allocator); bd->Pipeline = VK_NULL_HANDLE; }
 }
 
 bool    ImGui_ImplVulkan_LoadFunctions(PFN_vkVoidFunction(*loader_func)(const char* function_name, void* user_data), void* user_data)

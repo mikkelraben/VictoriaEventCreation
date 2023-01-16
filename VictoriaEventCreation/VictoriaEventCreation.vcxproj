@@ -208,10 +208,11 @@
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
     </ClCompile>
+    <ClCompile Include="Core\Macros.cpp" />
     <ClCompile Include="GUI\CustomDrawing.cpp" />
     <ClCompile Include="GUI\Windows.cpp" />
     <ClCompile Include="Core\Settings.cpp" />
-    <ClCompile Include="Sound\Sound.cpp" />
+    <ClCompile Include="Sound\FMOD.cpp" />
     <ClCompile Include="Sound\BankLoad.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
@@ -234,11 +235,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Application.h" />
+    <ClInclude Include="Core\Macros.h" />
     <ClInclude Include="GUI\CustomDrawing.h" />
     <ClInclude Include="GUI\Windows.h" />
     <ClInclude Include="Core\Settings.h" />
-    <ClInclude Include="Sound\Ogg.h" />
-    <ClInclude Include="Sound\Sound.h" />
+    <ClInclude Include="Sound\FMOD.h" />
     <ClInclude Include="Sound\BankLoad.h" />
     <ClInclude Include="Core\FilesysHelper.h" />
     <ClInclude Include="Core\Graphics.h" />

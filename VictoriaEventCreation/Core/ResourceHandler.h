@@ -22,5 +22,5 @@ private:
     static Graphics* graphics;
     static void LoadTexture(const std::filesystem::path& file);
     static uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-    static std::unordered_map<std::filesystem::path, std::weak_ptr<Texture>> textures;
+    static std::unordered_map<std::filesystem::path, std::shared_ptr<Texture>> textures;
 };

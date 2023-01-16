@@ -2,258 +2,114 @@
 #include <SFML/Audio.hpp>
 #include <vorbis/vorbisenc.h>
 #include "BankLoad.h"
+#include <Windows.h>
 
-using namespace std::chrono_literals;
-
-namespace Bank
+namespace Sound
 {
-    struct ListItem
+    std::vector<Event> SoundSystem::events = {};
+
+    FMOD::Studio::System*  SoundSystem::system = nullptr;
+    FMOD::System*  SoundSystem::coreSystem = nullptr;
+
+    std::vector<FMOD::Studio::Bank*> SoundSystem::banks = {};
+    std::vector<FMOD::Studio::EventDescription*> SoundSystem::eventVector = {};
+
+
+    void SoundSystem::InitSoundSystem()
     {
-        char List[5] = "";
-        unsigned int length = 0;
-    };
+        CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+        FMOD::FunctionLoader functionLoader;
+        functionLoader.loadFunctions();
 
-    struct ChunkBitField
-    {
-        unsigned int notLast : 1;
-        unsigned int chunksize : 24;
-        unsigned int type : 7;
-    };
+        
+        RE_ASSERT(FMOD::Studio::System::Create(&system, 0x00020100));
+        
+        
+        RE_ASSERT(system->getCoreSystem(system, &coreSystem));
 
-    struct SoundHeaderBitField
-    {
-        unsigned long long extraParameters : 1;
-        unsigned long long frequency : 4;
-        unsigned long long twoChannels : 1;
-        unsigned long long offset : 28;
-        unsigned long long samples : 30;
-    };
+        RE_ASSERT(coreSystem->setSoftwareFormat(coreSystem, 0, 2, 0));
 
-    void File::ReadNumberOfWavs(std::basic_ifstream<std::byte>& file)
-    {
-        int numberOfSounds;
-        file.seekg(12 + file.tellg());
-        file.read(reinterpret_cast<std::byte*>(&numberOfSounds), 4);
-        RE_LogMessage("No. of Sound Effects: " + std::to_string(numberOfSounds));
+        RE_ASSERT(system->intialize(system, 1024, 0, 0, nullptr));
 
-        sounds.resize(numberOfSounds);
+        
 
-    }
+        std::filesystem::path banksFolder = Settings::gameDirectory.getSetting() / "game\\sound\\banks";
 
-    void File::ReadSoundHeader(std::basic_ifstream<std::byte>& file)
-    {
-        for (size_t i = 0; i < sounds.size(); i++)
+        for (const std::filesystem::directory_entry& dir_entry : std::filesystem::directory_iterator{ banksFolder })
         {
-            Sound soundDetails;
-
-            SoundHeaderBitField headerBitField;
-
-            file.read(reinterpret_cast<std::byte*>(&headerBitField), 8);
-
-            soundDetails.offset = headerBitField.offset;
-            soundDetails.samples = headerBitField.samples;
-            soundDetails.channels = headerBitField.twoChannels + 1;
-
-            if (headerBitField.extraParameters)
+            FMOD::Studio::Bank* newBank = nullptr;
+            std::string file = dir_entry.path().filename().string();
+            if (file == "Soundtrack.bank")
             {
-                ChunkBitField chunkBitField;
-                do
-                {
-                    file.read(reinterpret_cast<std::byte*>(&chunkBitField), 4);
-                    if (chunkBitField.type != 11 && chunkBitField.notLast)
-                    {
-                        file.seekg(chunkBitField.chunksize + file.tellg());
-                    }
-                    else
-                    {
-                        //skip crc32 hash
-                        if (chunkBitField.type == 11)
-                        {
-                            file.read(reinterpret_cast<std::byte*>(&soundDetails.crc32Hash), 4);
-                        }
-                        else
-                        {
-                            file.seekg(4 + file.tellg());
-                        }
-
-                        int numberOfPackets = chunkBitField.chunksize / 8;
-
-                        for (size_t i = 0; i < numberOfPackets; i++)
-                        {
-                            Packet packet;
-
-                            bool isLast = (i + 1) == numberOfPackets;
-
-                            file.read(reinterpret_cast<std::byte*>(&packet), isLast ? 4 : 8);
-
-                            soundDetails.pages.push_back(packet);
-                        }
-                    }
-
-                } while (chunkBitField.notLast);
+                continue;
             }
 
-            sounds[i] = soundDetails;
-        }
-
-
-    }
-
-    void File::ReadWavs(std::basic_ifstream<std::byte>& file)
-    {
-        int soundFormat = 0;
-        int HeaderSize = 0;
-
-        file.read(reinterpret_cast<std::byte*>(&HeaderSize), 4);
-
-
-        file.seekg(8 + file.tellg());
-        file.read(reinterpret_cast<std::byte*>(&soundFormat), 4);
-
-        if (soundFormat != 15)
-        {
-            std::cout << "Error: Format Does not fit \n";
-        }
-
-        file.seekg(32 + file.tellg());
-
-        ReadSoundHeader(file);
-
-        //TODO: Split into own function
-        //names of sound effects
-        const int stringSize = 128;
-        long long startArray = file.tellg();
-
-        for (size_t i = 0; i < sounds.size(); i++)
-        {
-            file.seekg(i * 4 + startArray);
-
-            int stringStartOffset;
-            file.read(reinterpret_cast<std::byte*>(&stringStartOffset), 4);
-
-            file.seekg(startArray + stringStartOffset);
-
-            auto nameBuffer = std::make_unique<char[]>(stringSize);
-
-            //read name
-            file.getline(reinterpret_cast<std::byte*>(nameBuffer.get()), stringSize, std::byte(0));
-
-
-            std::string soundName = nameBuffer.get();
-            std::scoped_lock lock(soundsMutex);
-            sounds[i].name = soundName;
-        }
-    }
-
-    void File::ParseBankFile()
-    {
-        if (!path.has_filename())
-        {
-            return;
-        }
-        std::string filename = path.string();
-
-        //find length of file
-        std::basic_ifstream<std::byte> file;
-        file.open(filename, std::ios::binary | std::ios::ate);
-        long long fileSize = file.tellg();
-        file.close();
-
-
-        //open file
-        file.open(filename, std::ios::binary);
-
-
-        if (file.is_open())
-        {
-            RE_LogMessage(filename + " opened");
-
-            auto start = std::chrono::high_resolution_clock::now();
-
-            ListItem header;
-
-            file.read(reinterpret_cast<std::byte*>(&header.List), 4);
-            file.read(reinterpret_cast<std::byte*>(&header.length), 4);
-
-            bool endList = false;
-            file.seekg(36);
-
-            int i = 0;
-
-            while (!endList)
+            if (dir_entry.exists())
             {
-                long long position = file.tellg();
-
-                if (position == fileSize || i == 100)
+                std::string fileName = dir_entry.path().generic_string();
+                FMOD_RESULT err = system->loadBankFile(system, fileName.c_str(), 0, &newBank);
+                if (err != 0)
                 {
-                    break;
+                    RE_LogError("Could Not Load Bank: " + fileName);
                 }
-
-                ListItem listitem;
-                file.read(reinterpret_cast<std::byte*>(&listitem.List), 4);
-                file.read(reinterpret_cast<std::byte*>(&listitem.length), 4);
-
-                position = file.tellg();
-
-                if (i == 26)
+                if (newBank)
                 {
-                    ReadNumberOfWavs(file);
+                    banks.push_back(newBank);
+                    RE_LogMessage("Loaded: " + dir_entry.path().string());
                 }
+            }
+        }
 
-                if (strcmp("PROJ", listitem.List) == 0)
-                {
-                    file.seekg(36 + position);
-                }
-                else if (strcmp("SND ", listitem.List) == 0)
-                {
-                    file.seekg(4 + position);
-                    char firstLetter = 0;
+        for (auto& bank : banks)
+        {
+            int eventCount;
+            RE_ASSERT(bank->getEventCount(bank, &eventCount));
+            if (eventCount == 0)
+            {
+                continue;
+            }
+            eventVector = { (size_t)eventCount, nullptr };
 
-                    //seek to FSB5
-                    do
-                    {
-                        file.read(reinterpret_cast<std::byte*>(&firstLetter), 1);
-                    } while (firstLetter != 'F');
+            int eventsWritten;
+            RE_ASSERT(bank->getEventList(bank, eventVector.data(), eventVector.size(), &eventsWritten));
 
-                    file.seekg(3 + 8 + file.tellg());
+            for (auto& eventDescription : eventVector)
+            {
+                char buffer[256];
+                int stringSize;
+                RE_ASSERT(eventDescription->getPath(eventDescription, buffer, 256, &stringSize));
+                std::string eventName = { buffer };
 
-                    ReadWavs(file);
-                    endList = true;
-                }
-                else
-                {
-                    if (listitem.length == 0)
-                    {
-                        //file.seekg(4 + position);
-                    }
-                    else
-                    {
-                        file.seekg(listitem.length + position);
-                    }
-                }
+                FMOD::Studio::EventInstance* instance = nullptr;
+                RE_ASSERT(eventDescription->createInstance(eventDescription,&instance));
 
-
-
-                i++;
+                events.push_back({ eventName, instance});
             }
 
-            //decode the vorbis blocks to raw audio data
-            startData = file.tellg();
-
-            int filter = 0xFFFFFFC0;
-
-            startData = startData & filter;
-            startData += 64;
-
-            file.seekg(startData);
-
-            file.close();
-
-            auto end = std::chrono::high_resolution_clock::now();
-
-            std::chrono::duration<double> delta = end - start;
-
-            RE_LogMessage("time: " + std::to_string(delta.count()) + "s");
         }
+    }
+
+    void SoundSystem::Update()
+    {
+        RE_ASSERT(system->update(system));
+    }
+
+    void SoundSystem::DeleteSoundSystem()
+    {
+        for (auto& bank : banks)
+        {
+            bank->unload(bank);
+        }
+
+        system->release(system);
+    }
+
+    void Event::Play()
+    {
+        RE_ASSERT(instance->start(instance));
+    }
+    void Event::Stop()
+    {
+        RE_ASSERT(instance->stop(instance, 1));
     }
 }

@@ -29,6 +29,9 @@ bool VecGui::Button(std::string_view id, ImVec2 size)
     const static auto bevelTexturePath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\buttons\\default_button_bevel.dds");
     const static auto whiteTexture = ResourceHandler::GetTexture("gfx\\white.dds");
 
+    const static auto mousePress = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\buttons\\default_button_mousepress.dds");
+    const static auto mouseOver = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\buttons\\default_button_mouseover.dds");
+
     ImVec2 cursor = ImGui::GetCursorScreenPos();
     auto& style = ImGui::GetStyle();
 
@@ -49,6 +52,14 @@ bool VecGui::Button(std::string_view id, ImVec2 size)
         imSize = size;
     }
 
+    if (imSize.x < 75)
+    {
+        imSize.x = 75;
+    }
+    if (imSize.y < 35)
+    {
+        imSize.y = 35;
+    }
 
 
 
@@ -64,32 +75,39 @@ bool VecGui::Button(std::string_view id, ImVec2 size)
 
     ImDrawList* drawlist = ImGui::GetWindowDrawList();
 
-    //ImU32 col = ImGui::GetColorU32(held ? ImGuiCol_ButtonActive : ImGuiCol_ButtonHovered);
-    ImVec2 center = { (cursor.x * 2 + imSize.x) / 2,(cursor.y * 2 + imSize.y) / 2 };
-    ImVec2 uvMin = { 0,0 };
-
-    if (hovered)
-    {
-        uvMin = { 38.0f / 114.0f,0 };
-    }
-
-    if (pressed)
-    {
-        uvMin = { 76.0f / 114.0,0 };
-    }
-
     ImVec2 position = ImGui::GetCursorScreenPos();
     ImGui::SetCursorScreenPos(cursor);
 
-    VecGui::NineSliceImageFloating(*mainTexturePath.get(), imSize, { {19.0f,19.0f},{19.0f,19.0f} }, uvMin, { 38.0f / 114.0f + uvMin.x,1 }, { 255,255,255,(int)(255 * 0.7) },2);
+    ImVec2 uvMin = { 0,0 };
+    ImVec2 uvMax = { 38.0f / 114.0f + uvMin.x,1 };
+
+
+
+
+
+    VecGui::NineSliceImage(*mainTexturePath.get(), imSize, { {19.0f,19.0f},{19.0f,19.0f} }, uvMin, uvMax, { 255,255,255,(int)(255 * 0.7) },2,true);
+
+    if (hovered && !held)
+    {
+        VecGui::NineSliceImage(*mouseOver.get(), *mainTexturePath.get(), imSize, { {19.0f,19.0f},{19.0f,19.0f} }, { 0,0 }, { 1,1 }, uvMin, uvMax, { 255,255,255,(int)(255 * 0.5) }, 2, true, BlendMode::color_dodge);
+    }
+
+    if (held)
+    {
+        VecGui::NineSliceImage(*mousePress.get(), *mainTexturePath.get(), imSize, { {19.0f,19.0f},{19.0f,19.0f} }, { 0,0 }, { 1,1 }, uvMin, uvMax, { 255,255,255,(int)(255 * 1) }, 2, true, BlendMode::overlay);
+    }
+
     ImGui::SetCursorScreenPos(cursor);
     //VecGui::Image(cursor,*detailTexturePath.get(), *mainTexturePath.get(),size,{0,0}, { size.x/detailTexturePath.get()->width,size.y / detailTexturePath.get()->height }, uvMin, {38.0f / 114.0f + uvMin.x,1});
-    VecGui::NineSliceImage(*frameTexturePath.get(), *mainTexturePath.get(), imSize, { {19.0f,19.0f},{19.0f,19.0f} }, { 0,0 }, { 1, 1 }, uvMin, { 38.0f / 114.0f + uvMin.x,1 }, { 255,255,255,(int)(255 * 0.7) },2,true);
-    VecGui::NineSliceImage(*bgGradienTexturePath.get(), *mainTexturePath.get(), imSize, { {19.0f,19.0f},{19.0f,19.0f} }, { 0,0 }, { 1, 1 }, uvMin, { 38.0f / 114.0f + uvMin.x,1 }, { 255,255,255,(int)(255 * 0.5) },2,true);
-    VecGui::NineSliceImage(*detailTexturePath.get(), *mainTexturePath.get(), imSize, { {19.0f,19.0f},{19.0f,19.0f} }, { 0,0 }, {1,1}, uvMin, {38.0f / 114.0f + uvMin.x,1}, {255,255,255,(int)(255*0.7)}, 2,true);
+    VecGui::NineSliceImage(*frameTexturePath.get(), *mainTexturePath.get(), imSize, { {19.0f,19.0f},{19.0f,19.0f} }, { 0,0 }, { 1, 1 }, uvMin, uvMax, { 255,255,255,(int)(255 * 0.7) },2,true,BlendMode::overlay);
+    VecGui::NineSliceImage(*bgGradienTexturePath.get(), *mainTexturePath.get(), imSize, { {19.0f,19.0f},{19.0f,19.0f} }, { 0,0 }, { 1, 1 }, uvMin, uvMax, { 255,255,255,(int)(255 * 0.5) },2,true, BlendMode::overlay);
+    VecGui::NineSliceImage(*detailTexturePath.get(), *mainTexturePath.get(), imSize, { {19.0f,19.0f},{19.0f,19.0f} }, { 0,0 }, {1,1}, uvMin, uvMax, {255,255,255,(int)(255*0.7)}, 2,true, BlendMode::overlay);
 
     ImGui::SetCursorScreenPos(cursor + ImVec2{ 2,2 });
     VecGui::NineSliceImage(*bevelTexturePath.get(), imSize - ImVec2{ 4,4 }, { {75.0f,35.0f},{75.0f,35.0f} }, { 0,0 }, { 1,1 }, { 255,255,255,(int)(255 * 0.7) },2);
+
+    ImGui::SetCursorScreenPos(cursor);
+
 
     ImGui::RenderTextClipped(bb.Min + style.FramePadding, bb.Max - style.FramePadding, id.data(), NULL, &label_size, style.ButtonTextAlign, &bb);
     ImGui::SetCursorScreenPos(position);
@@ -169,7 +187,7 @@ bool VecGui::SliderScalar(std::string_view label, ImGuiDataType type, void* valu
 
         const bool temp_input_allowed = (flags & ImGuiSliderFlags_NoInput) == 0;
 
-        VecGui::NineSliceImageFloating(*backgroundTexture.get(), frame_bb.GetSize(), { {9.0f,9.0f},{9.0f,9.0f} }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.2f });
+        VecGui::NineSliceImage(*backgroundTexture.get(), frame_bb.GetSize(), { {9.0f,9.0f},{9.0f,9.0f} }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.2f },1,true);
 
         ImGui::ItemSize(total_bb, style.FramePadding.y);
         if (!ImGui::ItemAdd(total_bb, id, &frame_bb, temp_input_allowed ? ImGuiItemFlags_Inputable : 0))
@@ -260,10 +278,15 @@ bool VecGui::RoundButton(std::string_view id, std::string_view icon, const ImVec
         return false;
 
 
-    auto Icons = Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\buttons\\button_icons" / icon;
-    auto buttons = Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\buttons\\";
+    const auto Icons = Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\buttons\\button_icons" / (std::string(icon) + ".dds");
+    const auto buttons = Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\buttons\\";
     const static auto smallTexture = ResourceHandler::GetTexture(buttons / "round_button_small_wood.dds");
     const static auto largeTexture = ResourceHandler::GetTexture(buttons / "round_button_big_wood.dds");
+    const static auto mousePress = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\buttons\\default_button_mousepress.dds");
+    const static auto mouseOver = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\buttons\\default_button_mouseover.dds");
+
+    const static auto iconSheen = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\buttons\\button_icons\\icon_button_mouse_enter.dds");
+
 
     ImVec2 cursor = ImGui::GetCursorScreenPos();
 
@@ -278,14 +301,22 @@ bool VecGui::RoundButton(std::string_view id, std::string_view icon, const ImVec
     bool hovered, held;
     bool clicked = ImGui::ButtonBehavior(bb, imId, &hovered, &held, 0);
 
-
-    if (size.x < 160 || size.y < 160)
+    auto mainBackgroundTexturePath = largeTexture;
+    if (size.x < 78 || size.y < 78)
     {
-        Image(cursor, *smallTexture.get(), size, { 0,0 }, { 1,1 }, IM_COL32_WHITE, true);
+        mainBackgroundTexturePath = smallTexture;
     }
-    else
+
+    Image(cursor, *mainBackgroundTexturePath.get(), size, { 0,0 }, { 1,1 }, IM_COL32_WHITE, true);
+
+    if (hovered && !held)
     {
-        Image(cursor, *largeTexture.get(), size, { 0,0 }, { 1,1 }, IM_COL32_WHITE, true);
+        VecGui::Image(cursor, *mouseOver.get(), *mainBackgroundTexturePath.get(), size, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 },{ 255,255,255,(int)(255 * 0.5) }, true, BlendMode::color_dodge);
+    }
+
+    if (held)
+    {
+        VecGui::Image(cursor, *mousePress.get(), *mainBackgroundTexturePath.get(), size, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, { 255,255,255,(int)(255 * 1) }, true, BlendMode::overlay);
     }
 
 
@@ -293,124 +324,13 @@ bool VecGui::RoundButton(std::string_view id, std::string_view icon, const ImVec
     {
         const auto mainTexturePath = ResourceHandler::GetTexture(Icons);
 
-        Image(*mainTexturePath.get(), size);
+        Image(cursor, *mainTexturePath.get(), size, { 0,0 }, { 1,1 }, IM_COL32_WHITE, true);
+        if (hovered && !held)
+        {
+            VecGui::Image(cursor, *iconSheen.get(), *mainBackgroundTexturePath.get(), size, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, { 255,255,255,(int)(255 * 0.7) }, true, BlendMode::overlay);
+        }
     }
     return clicked;
-}
-
-bool VecGui::ImageButton(std::string_view id, Texture& texture, const ImVec2& size, const ImVec2& uvMin, const ImVec2& uvMax)
-{
-    if (texture.initialized)
-    {
-        return ImGui::ImageButton(id.data(), texture.textureID, size, uvMin, uvMax, { 0,0,0,0 });
-    }
-    else
-    {
-        return ImGui::Button(id.data(), size);
-    }
-}
-
-void VecGui::Image(Texture& texture, ImVec2 size, ImVec2 uvMin, ImVec2 uvMax, ImColor color)
-{
-    auto draw_list = ImGui::GetWindowDrawList();
-    ImVec2 cursor = ImGui::GetCursorScreenPos();
-
-    if (texture.initialized)
-    {
-        ImGui::Image(texture.textureID, size, uvMin, uvMax, color);
-    }
-    else
-    {
-        NoImageBehaviour(cursor, size, draw_list);
-    }
-}
-
-void VecGui::Image(ImVec2 Pos, Texture& texture, ImVec2 size, ImVec2 uvMin, ImVec2 uvMax, ImColor color, bool floating)
-{
-    auto draw_list = ImGui::GetWindowDrawList();
-
-    if (!floating)
-    {
-        ImRect bb(Pos, Pos + size);
-        ImGui::ItemSize(bb);
-        if (!ImGui::ItemAdd(bb, 0))
-            return;
-    }
-
-
-    //uncomment to add bounding box around a texture
-    //draw_list->AddRect(bb.Min, bb.Max, ImColor(128, 0, 255));
-
-    if (texture.initialized)
-    {
-        draw_list->AddImage(texture.textureID, Pos, Pos + size, uvMin, uvMax, color);
-
-    }
-    else
-    {
-        draw_list->AddRectFilled(Pos, Pos + size, noImageColor);
-    }
-
-}
-
-void VecGui::Image(ImVec2 Pos, Texture& texture, Texture& alphaMask, ImVec2 size, ImVec2 uvMin, ImVec2 uvMax, ImVec2 uvAlphaMin, ImVec2 uvAlphaMax, ImColor color)
-{
-    auto draw_list = ImGui::GetWindowDrawList();
-
-    ImRect bb(Pos, Pos + size);
-    ImGui::ItemSize(bb);
-    if (!ImGui::ItemAdd(bb, 0))
-        return;
-
-    //uncomment to add bounding box around a texture
-    //draw_list->AddRect(bb.Min, bb.Max, ImColor(128, 0, 255));
-
-    if (texture.initialized)
-    {
-        DrawImageAlphaMask(texture, alphaMask, Pos, Pos + size, uvMin, uvMax, uvAlphaMin, uvAlphaMax, true);
-    }
-    else
-    {
-        draw_list->AddRectFilled(Pos, Pos + size, noImageColor);
-    }
-
-}
-
-//middleSlice is defined as 
-void VecGui::NineSliceImage(Texture& texture, ImVec2 size, VecRect middleSlice, ImVec2 uvMin, ImVec2 uvMax, ImColor color, float scale)
-{
-    auto draw_list = ImGui::GetWindowDrawList();
-
-    ImVec2 cursor = ImGui::GetCursorScreenPos();
-
-    ImVec2 textureSize = { (float)texture.width,(float)texture.height };
-    ImVec2 uvSize = uvMax - uvMin;
-    ImVec2 SectionSize = uvSize * textureSize;
-
-    if (texture.initialized)
-    {
-        if (size == SectionSize)
-        {
-            Image(cursor, texture, size, uvMin, uvMax);
-        }
-        else
-        {
-            ImRect bb(cursor, cursor + size);
-            ImGui::ItemSize(bb);
-            if (!ImGui::ItemAdd(bb, 0))
-                return;
-
-            ImVec2 UvCornerSize = middleSlice.min / textureSize;
-            ImVec4 middleRect = { middleSlice.min.x,middleSlice.min.y, middleSlice.max.x,middleSlice.max.y };
-
-            DrawNineSliceImage(texture, cursor, size, middleRect, uvMin, uvMax, color, scale);
-        }
-
-    }
-    else
-    {
-        NoImageBehaviour(cursor, size, draw_list);
-    }
 }
 
 void VecGui::NoImageBehaviour(ImVec2& cursor, ImVec2& size, ImDrawList* draw_list, bool isFloating)
@@ -425,7 +345,107 @@ void VecGui::NoImageBehaviour(ImVec2& cursor, ImVec2& size, ImDrawList* draw_lis
     draw_list->AddRectFilled(cursor, cursor + size, noImageColor);
 }
 
-void VecGui::NineSliceImage(Texture& texture, Texture& alphaMask, ImVec2 size, VecRect middleSlice, ImVec2 uvMin, ImVec2 uvMax, ImVec2 uvAlphaMin, ImVec2 uvAlphaMax, ImColor color, float scale, bool isFloating)
+bool VecGui::ImageButton(std::string_view id, Texture& texture, const ImVec2& size, const ImVec2& uvMin, const ImVec2& uvMax)
+{
+    if (texture.initialized)
+    {
+        return ImGui::ImageButton(id.data(), texture.textureID, size, uvMin, uvMax, { 0,0,0,0 });
+    }
+    else
+    {
+        return ImGui::Button(id.data(), size);
+    }
+}
+
+void VecGui::Image(Texture& texture, ImVec2 size, ImVec2 uvMin, ImVec2 uvMax, ImColor color, bool isFloating, BlendMode colorBlend)
+{
+    const static auto whiteTexture = ResourceHandler::GetTexture("gfx\\white.dds");
+
+    auto draw_list = ImGui::GetWindowDrawList();
+    ImVec2 cursor = ImGui::GetCursorScreenPos();
+
+    if (!isFloating)
+    {
+        ImRect bb(cursor, cursor + size);
+        ImGui::ItemSize(bb);
+        if (!ImGui::ItemAdd(bb, 0))
+            return;
+    }
+    
+    if (!&texture)
+    {
+        NoImageBehaviour(cursor, size, draw_list);
+        return;
+    }
+
+    if (texture.initialized && whiteTexture.get()->initialized)
+    {
+        DrawImageAlphaMask(texture, *whiteTexture.get(), cursor, cursor + size, uvMin, uvMax, { 0,0 }, { 1,1 }, colorBlend);
+    }
+    else
+    {
+        NoImageBehaviour(cursor, size, draw_list);
+    }
+}
+
+void VecGui::Image(ImVec2 Pos, Texture& texture, ImVec2 size, ImVec2 uvMin, ImVec2 uvMax, ImColor color, bool floating, BlendMode colorBlend)
+{
+    auto draw_list = ImGui::GetWindowDrawList();
+    const static auto whiteTexture = ResourceHandler::GetTexture("gfx\\white.dds");
+
+
+    if (!floating)
+    {
+        ImRect bb(Pos, Pos + size);
+        ImGui::ItemSize(bb);
+        if (!ImGui::ItemAdd(bb, 0))
+            return;
+    }
+
+
+    //uncomment to add bounding box around a texture
+    //draw_list->AddRect(bb.Min, bb.Max, ImColor(128, 0, 255));
+
+    if (texture.initialized && whiteTexture.get()->initialized)
+    {
+        DrawImageAlphaMask(texture, *whiteTexture.get(), Pos, Pos + size, uvMin, uvMax, { 0,0 }, { 1,1 }, colorBlend);
+
+    }
+    else
+    {
+        draw_list->AddRectFilled(Pos, Pos + size, noImageColor);
+    }
+
+}
+
+void VecGui::Image(ImVec2 Pos, Texture& texture, Texture& alphaMask, ImVec2 size, ImVec2 uvMin, ImVec2 uvMax, ImVec2 uvAlphaMin, ImVec2 uvAlphaMax, ImColor color, bool floating, BlendMode colorBlend)
+{
+    auto draw_list = ImGui::GetWindowDrawList();
+
+    if (!floating)
+    {
+        ImRect bb(Pos, Pos + size);
+        ImGui::ItemSize(bb);
+        if (!ImGui::ItemAdd(bb, 0))
+            return;
+    }
+
+    //uncomment to add bounding box around a texture
+    //draw_list->AddRect(bb.Min, bb.Max, ImColor(128, 0, 255));
+
+    if (texture.initialized && alphaMask.initialized)
+    {
+        DrawImageAlphaMask(texture, alphaMask, Pos, Pos + size, uvMin, uvMax, uvAlphaMin, uvAlphaMax, colorBlend);
+    }
+    else
+    {
+        draw_list->AddRectFilled(Pos, Pos + size, noImageColor);
+    }
+
+}
+
+//middleSlice is defined as pixels from upper left and bottom right corners
+void VecGui::NineSliceImage(Texture& texture, ImVec2 size, VecRect middleSlice, ImVec2 uvMin, ImVec2 uvMax, ImColor color, float scale, bool isFloating, BlendMode colorBlend)
 {
     auto draw_list = ImGui::GetWindowDrawList();
 
@@ -445,21 +465,19 @@ void VecGui::NineSliceImage(Texture& texture, Texture& alphaMask, ImVec2 size, V
                 return;
         }
 
+
         ImVec2 UvCornerSize = middleSlice.min / textureSize;
         ImVec4 middleRect = { middleSlice.min.x,middleSlice.min.y, middleSlice.max.x,middleSlice.max.y };
 
-        DrawNineSliceImage(texture, alphaMask, cursor, size, middleRect, uvMin, uvMax, uvAlphaMin, uvAlphaMax, color, scale, true);
-        //draw_list->AddRectFilled(cursor, cursor + size, ImColor(128, 0, 255, 128));
-
-
+        DrawNineSliceImage(texture, cursor, size, middleRect, uvMin, uvMax, color, scale, colorBlend);
     }
     else
     {
-        NoImageBehaviour(cursor, size, draw_list, isFloating);
+        NoImageBehaviour(cursor, size, draw_list);
     }
 }
 
-void VecGui::NineSliceImageFloating(Texture& texture, ImVec2 size, VecRect middleSlice, ImVec2 uvMin, ImVec2 uvMax, ImColor color, float scale)
+void VecGui::NineSliceImage(Texture& texture, Texture& alphaMask, ImVec2 size, VecRect middleSlice, ImVec2 uvMin, ImVec2 uvMax, ImVec2 uvAlphaMin, ImVec2 uvAlphaMax, ImColor color, float scale, bool isFloating, BlendMode colorBlend)
 {
     auto draw_list = ImGui::GetWindowDrawList();
 
@@ -469,24 +487,26 @@ void VecGui::NineSliceImageFloating(Texture& texture, ImVec2 size, VecRect middl
     ImVec2 uvSize = uvMax - uvMin;
     ImVec2 SectionSize = uvSize * textureSize;
 
-    if (texture.initialized)
+    if (texture.initialized && alphaMask.initialized)
     {
-        if (size == SectionSize)
+        if (!isFloating)
         {
-            draw_list->AddImage(texture.textureID, cursor, cursor + size, uvMin, uvMax);
+            ImRect bb(cursor, cursor + size);
+            ImGui::ItemSize(bb);
+            if (!ImGui::ItemAdd(bb, 0))
+                return;
         }
-        else
-        {
-            ImVec2 UvCornerSize = middleSlice.min / textureSize;
-            ImVec4 middleRect = { middleSlice.min.x,middleSlice.min.y, middleSlice.max.x,middleSlice.max.y };
 
-            DrawNineSliceImage(texture, cursor, size, middleRect, uvMin, uvMax, color, scale);
-        }
+        ImVec2 UvCornerSize = middleSlice.min / textureSize;
+        ImVec4 middleRect = { middleSlice.min.x,middleSlice.min.y, middleSlice.max.x,middleSlice.max.y };
+
+        DrawNineSliceImage(texture, alphaMask, cursor, size, middleRect, uvMin, uvMax, uvAlphaMin, uvAlphaMax, color, scale, colorBlend);
+        //draw_list->AddRectFilled(cursor, cursor + size, ImColor(128, 0, 255, 128));
+
 
     }
     else
     {
-        draw_list->AddRectFilled(cursor, cursor + size, noImageColor);
+        NoImageBehaviour(cursor, size, draw_list, isFloating);
     }
-
 }

@@ -10,7 +10,7 @@ using namespace std::chrono_literals;
 //#TODO Clean Up
 Graphics* ResourceHandler::graphics = nullptr;
 std::mutex textureMutex;
-std::unordered_map<std::filesystem::path, std::weak_ptr<Texture>> ResourceHandler::textures;
+std::unordered_map<std::filesystem::path, std::shared_ptr<Texture>> ResourceHandler::textures;
 
 std::mutex submitInfosMutex;
 static std::vector<VkSubmitInfo> submitInfos;
@@ -275,11 +275,9 @@ void ResourceHandler::LoadTexture(const std::filesystem::path& file)
 
             texture->initialized = true;
             
-            if (!textures.at(file).expired())
-            {
-                Texture* var = textures.at(file).lock().get();
-                *var = *texture;
-            }
+            Texture* oldTexture = textures.at(file).get();
+            *oldTexture = *texture;
+
             waitForTexturesUpdated.release();
             vkDestroyCommandPool(graphics->device, cmdPool, nullptr);
         }
@@ -300,7 +298,7 @@ std::shared_ptr<Texture> ResourceHandler::GetTexture(const std::filesystem::path
         //if texture exists
         if (textures.contains(file))
         {
-            return textures[file].lock();
+            return textures[file];
         }
         //else create new entry in textures and
         textures[file];
@@ -321,7 +319,7 @@ std::shared_ptr<Texture> ResourceHandler::GetTexture(const std::filesystem::path
 void ResourceHandler::SubmitWork()
 {
     std::lock_guard lock(submitInfosMutex);
-    if (!submitInfos.empty())
+    if (!submitInfos.empty() && submitInfos.size() > 0)
     {
         if (vkQueueSubmit(graphics->graphicsQueue, (uint32_t)submitInfos.size(), submitInfos.data(), VK_NULL_HANDLE) != VK_SUCCESS)
         {
@@ -345,7 +343,7 @@ void ResourceHandler::DestroyResourceHandler()
 {
     for (auto& texture : textures)
     {
-        if (auto texturePointer = texture.second.lock())
+        if (auto texturePointer = texture.second)
         {
             texturePointer.get()->~Texture();
         }

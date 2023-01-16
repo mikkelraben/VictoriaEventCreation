@@ -4,30 +4,18 @@
 #include "../Sound/BankLoad.h"
 #include "Widgets.h"
 
-void BufferTest::Run()
-{
-    auto buffer = new unsigned char[1024];
-    
-    ogg_packet packet;
-
-    packet.packet = buffer;
-    packet.bytes = 1024;
-    ogg_packet_clear(&packet);
-}
-
 void EventTool::Run()
 {
     static int selected = 0;
     static std::string preview = "Pick A Sound";
     if (ImGui::BeginCombo("Sounds",preview.c_str(), 0))
     {
-        std::scoped_lock lock(soundsFile.soundsMutex);
-        for (size_t i = 0; i < soundsFile.sounds.size(); i++)
+        for (size_t i = 0; i < soundSystem.events.size(); i++)
         {
             bool isSelected = selected == i;
-            if (ImGui::Selectable(soundsFile.sounds[i].name.c_str()))
+            if (ImGui::Selectable(soundSystem.events[i].name.c_str()))
             {
-                preview = soundsFile.sounds[i].name;
+                preview = soundSystem.events[i].name;
                 selected = i;
             }
 
@@ -39,7 +27,7 @@ void EventTool::Run()
         }
         ImGui::EndCombo();
     }
-    if (!soundsFile.sounds.empty())
+    if (!soundSystem.events.empty())
     {
         static float sizeX = 0.0f;
         static float sizeY = 0.0f;
@@ -50,15 +38,12 @@ void EventTool::Run()
 
         if(VecGui::Button("Play",{sizeX,sizeY}))
         {
-            sound = std::make_unique<Sound>(soundsFile.sounds[selected], soundsFile);
-            sound->play();
+            soundSystem.events[selected].Play();
         }
-        if (sound.get())
+
+        if (VecGui::RoundButton("stop", "close", { 47,47 }))
         {
-            if (VecGui::RoundButton("stop", "close", { 47,47 }))
-            {
-                sound->pause();
-            }
+            soundSystem.events[selected].Stop();
         }
 
 
@@ -71,8 +56,6 @@ void EventTool::Run()
 
 void EventTool::Opened()
 {
-    std::jthread thread(&Bank::File::ParseBankFile,&soundsFile);
-    thread.detach();
 }
 
 void Console::Run()
