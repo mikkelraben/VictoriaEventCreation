@@ -313,6 +313,10 @@ void VictoriaWindow::RenderWindowDecorations(ImGuiWindow* window, const ImRect& 
                 ImGuiWindowFlags IsChild = ImGuiWindowFlags_ChildMenu | ImGuiWindowFlags_Popup | ImGuiWindowFlags_ChildWindow | ImGuiWindowFlags_Tooltip;
                 ImGuiWindowFlags isDock = ImGuiWindowFlags_DockNodeHost;
 
+                if (flags & ImGuiWindowFlags_NoTitleBar || window->DockIsActive)
+                {
+                    ImGui::PushClipRect({ window->TitleBarRect().Min.x, window->TitleBarRect().Max.y }, { window->Rect().Max.x,window->Rect().Max.y }, true);
+                }
                 //background
                 if (!(flags & IsChild))
                 {
@@ -333,7 +337,7 @@ void VictoriaWindow::RenderWindowDecorations(ImGuiWindow* window, const ImRect& 
                 }
 
                 //Header Background
-                if (!(flags & ImGuiWindowFlags_NoTitleBar))
+                if (!(flags & ImGuiWindowFlags_NoTitleBar) && !window->DockIsActive)
                 {
                     float headerWidth = window->TitleBarRect().GetSize().x;
                     float headerHeight = window->TitleBarRect().GetSize().y;
@@ -349,6 +353,7 @@ void VictoriaWindow::RenderWindowDecorations(ImGuiWindow* window, const ImRect& 
                     
                     
                     VecGui::Image({ window->TitleBarRect().Min.x,window->TitleBarRect().Max.y - 12 }, *HeaderDivider.get(), { window->TitleBarRect().GetSize().x-16,8}, {0,0}, {headerWidth / HeaderDivider.get()->width * 2, 1}, ImColor{1.0f,1.0f,1.0f,1.0f}, true, BlendMode::normal);
+                    
                 }
 
                 //Foreground
@@ -364,6 +369,12 @@ void VictoriaWindow::RenderWindowDecorations(ImGuiWindow* window, const ImRect& 
                 {
                     DrawNineSliceImage(*smallFramePath.get(), window->Pos, window->Size, { 90,90,90,90 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::normal);
                 }
+
+                if (flags & ImGuiWindowFlags_NoTitleBar || window->DockIsActive)
+                {
+                    ImGui::PopClipRect();
+                }
+
 
 
             }

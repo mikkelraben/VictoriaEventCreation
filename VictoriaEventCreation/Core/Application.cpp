@@ -123,7 +123,9 @@ namespace BaseApp {
 
     Window::Window(std::vector<Window*>& applicationWindows) : windows(applicationWindows)
     {
-
+        static int counter = 0;
+        counter++;
+        windowID = counter;
     }
 
     void Window::Execute()
@@ -181,6 +183,10 @@ namespace BaseApp {
     void Window::Properties()
     {
         ImGui::Text("No Properties");
+    }
+    int Window::getId()
+    {
+        return windowID;
     }
 }
 

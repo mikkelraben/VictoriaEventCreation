@@ -6,9 +6,19 @@
 
 void EventTool::Run()
 {
+
+}
+
+void EventTool::Properties()
+{
+    for (auto& param : object.children)
+    {
+        param->EditableField();
+    }
+
     static int selected = 0;
     static std::string preview = "Pick A Sound";
-    if (ImGui::BeginCombo("Sounds",preview.c_str(), 0))
+    if (ImGui::BeginCombo("Sounds", preview.c_str(), 0))
     {
         for (size_t i = 0; i < soundSystem.events.size(); i++)
         {
@@ -22,7 +32,7 @@ void EventTool::Run()
             if (isSelected)
             {
                 ImGui::SetItemDefaultFocus();
-                
+
             }
         }
         ImGui::EndCombo();
@@ -36,7 +46,7 @@ void EventTool::Run()
         VecGui::SliderFloat("Size Y", sizeY, -1, 256);
 
 
-        if(VecGui::Button("Play",{sizeX,sizeY}))
+        if (VecGui::Button("Play", { sizeX,sizeY }))
         {
             soundSystem.events[selected].Play();
         }
@@ -51,12 +61,6 @@ void EventTool::Run()
 
         VecGui::CheckBox("CheckBox", Value);
     }
-
-}
-
-void EventTool::Properties()
-{
-    ImGui::Text("You have selected The Event Tool");
 }
 
 void Console::Run()
@@ -97,9 +101,22 @@ void SettingsEditor::Run()
 
 void Properties::Run()
 {
+    static int SelectedID = -1;
+
+    //find the current selection
     for (auto& window : windows)
     {
-        if (window->isSelected)
+        //check if the window is selected and not the Properties window
+        if (window->isSelected && window->getId() != windowID)
+        {
+            SelectedID = window->getId();
+        }
+    }
+
+    //display the selection
+    for (auto& window : windows)
+    {
+        if (window->getId() == SelectedID)
         {
             window->Properties();
             return;

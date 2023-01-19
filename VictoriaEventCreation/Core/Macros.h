@@ -11,15 +11,13 @@
     #define Break()
 #endif
 
-#define AssertFunction(result, file, line)                                                          \
-if (result != 0)                                                                                    \
+#define AssertFunction(result, file, line, value)                                                   \
+if (result != value)                                                                                    \
 {                                                                                                   \
     RE_LogError("Assert failed at File: " + std::string(file) + "Line: " + std::to_string(line));   \
     Break();                                                                                        \
 }                                                                                                   \
 
+#define RE_ASSERT_ZERO(booleanReturn) AssertFunction(booleanReturn, __FILE__, __LINE__,0)
 
-
-
-
-#define RE_ASSERT(booleanReturn) AssertFunction(booleanReturn, __FILE__, __LINE__)
+#define RE_ASSERT(booleanReturn) AssertFunction(booleanReturn, __FILE__, __LINE__,true)

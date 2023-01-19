@@ -1,6 +1,7 @@
 #pragma once
 #include "../Core/Application.h"
 #include "../Sound/BankLoad.h"
+#include "../Scripting Objects/Event.h"
 
 class EventTool : public BaseApp::Window
 {
@@ -14,6 +15,7 @@ public:
     void Properties() override;
 private:
     Sound::SoundSystem soundSystem;
+    Event object;
 };
 
 class Console : public BaseApp::Window

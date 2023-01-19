@@ -49,6 +49,9 @@ namespace BaseApp {
 
         //set to true to open window and false to close window
         bool isWindowOpen = false;
+
+        //gets an internal id to keep track of different windows
+        int getId();
     protected:
 
         //override to use non standard window behaviour
@@ -66,6 +69,8 @@ namespace BaseApp {
 
         bool unsavedChanges = false;
         bool windowHasOpened = false;
+
+        int windowID = 0;
 
         //set to change window flags in ImGui::Begin
         ImGuiWindowFlags windowFlags = 0;

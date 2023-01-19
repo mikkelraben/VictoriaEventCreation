@@ -209,6 +209,8 @@
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
     </ClCompile>
     <ClCompile Include="Core\Macros.cpp" />
+    <ClCompile Include="Core\Node.cpp" />
+    <ClCompile Include="Scripting Objects\Event.cpp" />
     <ClCompile Include="GUI\CustomDrawing.cpp" />
     <ClCompile Include="GUI\Windows.cpp" />
     <ClCompile Include="Core\Settings.cpp" />
@@ -236,6 +238,8 @@
   <ItemGroup>
     <ClInclude Include="Core\Application.h" />
     <ClInclude Include="Core\Macros.h" />
+    <ClInclude Include="Core\Node.h" />
+    <ClInclude Include="Scripting Objects\Event.h" />
     <ClInclude Include="GUI\CustomDrawing.h" />
     <ClInclude Include="GUI\Windows.h" />
     <ClInclude Include="Core\Settings.h" />

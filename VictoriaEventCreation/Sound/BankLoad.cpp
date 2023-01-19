@@ -22,14 +22,14 @@ namespace Sound
         functionLoader.loadFunctions();
 
         
-        RE_ASSERT(FMOD::Studio::System::Create(&system, 0x00020100));
+        RE_ASSERT_ZERO(FMOD::Studio::System::Create(&system, 0x00020100));
         
         
-        RE_ASSERT(system->getCoreSystem(system, &coreSystem));
+        RE_ASSERT_ZERO(system->getCoreSystem(system, &coreSystem));
 
-        RE_ASSERT(coreSystem->setSoftwareFormat(coreSystem, 0, 2, 0));
+        RE_ASSERT_ZERO(coreSystem->setSoftwareFormat(coreSystem, 0, 2, 0));
 
-        RE_ASSERT(system->intialize(system, 1024, 0, 0, nullptr));
+        RE_ASSERT_ZERO(system->intialize(system, 1024, 0, 0, nullptr));
 
         setVolume(Settings::volume.getSetting());
 
@@ -63,7 +63,7 @@ namespace Sound
         for (auto& bank : banks)
         {
             int eventCount;
-            RE_ASSERT(bank->getEventCount(bank, &eventCount));
+            RE_ASSERT_ZERO(bank->getEventCount(bank, &eventCount));
             if (eventCount == 0)
             {
                 continue;
@@ -71,17 +71,17 @@ namespace Sound
             eventVector = { (size_t)eventCount, nullptr };
 
             int eventsWritten;
-            RE_ASSERT(bank->getEventList(bank, eventVector.data(), eventVector.size(), &eventsWritten));
+            RE_ASSERT_ZERO(bank->getEventList(bank, eventVector.data(), eventVector.size(), &eventsWritten));
 
             for (auto& eventDescription : eventVector)
             {
                 char buffer[256];
                 int stringSize;
-                RE_ASSERT(eventDescription->getPath(eventDescription, buffer, 256, &stringSize));
+                RE_ASSERT_ZERO(eventDescription->getPath(eventDescription, buffer, 256, &stringSize));
                 std::string eventName = { buffer };
 
                 FMOD::Studio::EventInstance* instance = nullptr;
-                RE_ASSERT(eventDescription->createInstance(eventDescription,&instance));
+                RE_ASSERT_ZERO(eventDescription->createInstance(eventDescription,&instance));
 
                 events.push_back({ eventName, instance});
             }
@@ -91,7 +91,7 @@ namespace Sound
 
     void SoundSystem::Update()
     {
-        RE_ASSERT(system->update(system));
+        RE_ASSERT_ZERO(system->update(system));
     }
 
     void SoundSystem::DeleteSoundSystem()
@@ -115,10 +115,10 @@ namespace Sound
 
     void Event::Play()
     {
-        RE_ASSERT(instance->start(instance));
+        RE_ASSERT_ZERO(instance->start(instance));
     }
     void Event::Stop()
     {
-        RE_ASSERT(instance->stop(instance, 1));
+        RE_ASSERT_ZERO(instance->stop(instance, 1));
     }
 }
