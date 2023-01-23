@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Node.h"
+#include "../Sound/BankLoad.h"
 
 void Node::EditableField()
 {
@@ -107,4 +108,74 @@ YAML::Node Param<std::string>::Serialize()
     node["variableType"] = "string";
 
     return node;
+}
+
+void Param<Sound::Event>::EditableField()
+{
+    ImGui::Text(name.c_str());
+    ImGui::SameLine();
+    ImGui::PushItemWidth(-4);
+    ImGui::PushID(&name);
+
+    if (ImGui::BeginCombo("Sounds", preview.c_str(), 0))
+    {
+        for (size_t i = 0; i < soundSystem.events.size(); i++)
+        {
+            bool isSelected = selected == i;
+            if (ImGui::Selectable(soundSystem.events[i].name.c_str()))
+            {
+                preview = soundSystem.events[i].name;
+                selected = i;
+            }
+
+            if (isSelected)
+            {
+                ImGui::SetItemDefaultFocus();
+
+            }
+        }
+        ImGui::EndCombo();
+    }
+    if (!soundSystem.events.empty())
+    {
+        if (VecGui::Button("Play"))
+        {
+            soundSystem.events[selected].Play();
+        }
+
+        if (VecGui::RoundButton("stop", "close", { 47,47 }))
+        {
+            soundSystem.events[selected].Stop();
+        }
+    }
+
+    ImGui::PopID();
+    ImGui::PopItemWidth();
+}
+
+YAML::Node Param<Sound::Event>::Serialize()
+{
+    YAML::Node node;
+    node["type"] = "param";
+    node["name"] = name;
+    node["variable"] = variable;
+    node["variableType"] = "string";
+
+    return node;
+}
+
+void Param<Sound::Event>::FindSelection()
+{
+    if (Sound::SoundSystem::events.size() > 0)
+    {
+        for (size_t i = 0; i < Sound::SoundSystem::events.size(); i++)
+        {
+            if (Sound::SoundSystem::events[i].name == variable.name)
+            {
+                selected = i;
+                preview = Sound::SoundSystem::events[i].name;
+                return;
+            }
+        }
+    }
 }

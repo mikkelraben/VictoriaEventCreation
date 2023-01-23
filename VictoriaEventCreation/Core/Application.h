@@ -50,6 +50,9 @@ namespace BaseApp {
         //set to true to open window and false to close window
         bool isWindowOpen = false;
 
+        //when set to true the application will remove this window
+        bool requestDelete = false;
+
         //gets an internal id to keep track of different windows
         int getId();
     protected:

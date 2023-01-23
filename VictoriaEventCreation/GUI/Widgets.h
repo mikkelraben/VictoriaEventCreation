@@ -13,7 +13,7 @@ namespace VecGui
         ImVec2 max;
     };
     bool Button(std::string_view id, ImVec2 size = {-1,-1});
-    bool RoundButton(std::string_view id, std::string_view icon, const ImVec2& size, const ImVec2& uvMin = {0,0}, const ImVec2& uvMax = {1,1});
+    bool RoundButton(std::string_view id, std::string_view icon, const ImVec2& size, const ImVec2& uvMin = {0,0}, const ImVec2& uvMax = {1,1}, bool isCloseTab = false);
     void CheckBox(std::string_view id, bool& value);
     bool SliderInt(std::string_view id, int& value, int min, int max);
     bool SliderFloat(std::string_view id, float& value, float min, float max);

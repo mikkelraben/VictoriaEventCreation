@@ -1,5 +1,6 @@
 #pragma once
 #include "yaml-cpp/yaml.h"
+#include "../Sound/BankLoad.h"
 
 struct BasicNode
 {
@@ -35,4 +36,23 @@ struct Param : public BasicNode
         name = node["name"].as<std::string>();
         variable = node["variable"].as<T>();
     };
+};
+
+template<>
+struct Param<Sound::Event> : public BasicNode
+{
+    Param(Sound::Event startValue, std::string const& _name) { variable = startValue; name = _name; if (startValue.instance) { FindSelection(); } }
+    Sound::Event variable;
+    void EditableField() override;
+    YAML::Node Serialize() override;
+    void Deserialize(const YAML::Node& node) override
+    {
+        name = node["name"].as<std::string>();
+        variable = node["variable"].as<Sound::Event>();
+    };
+private:
+    void FindSelection();
+    std::string preview = "Pick A Sound";
+    Sound::SoundSystem soundSystem;
+    int selected = 0;
 };

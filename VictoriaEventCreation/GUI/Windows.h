@@ -14,7 +14,6 @@ public:
     void Run() override;
     void Properties() override;
 private:
-    Sound::SoundSystem soundSystem;
     Event object;
 };
 

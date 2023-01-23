@@ -111,7 +111,22 @@ namespace Sound
         channelGroup->setVolume(channelGroup, volume);
     }
 
-    
+    Event::Event(const std::string& string)
+    {
+        if (SoundSystem::events.size() > 0)
+        {
+            for (auto& event : SoundSystem::events)
+            {
+                if (event.name == string)
+                {
+                    instance = event.instance;
+                    name = string;
+                    return;
+                }
+            }
+        }
+    }
+
 
     void Event::Play()
     {
@@ -121,4 +136,6 @@ namespace Sound
     {
         RE_ASSERT_ZERO(instance->stop(instance, 1));
     }
+
+
 }

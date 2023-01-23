@@ -271,7 +271,7 @@ bool VecGui::SliderScalar(std::string_view label, ImGuiDataType type, void* valu
 }
 
 
-bool VecGui::RoundButton(std::string_view id, std::string_view icon, const ImVec2& size, const ImVec2& uvMin, const ImVec2& uvMax)
+bool VecGui::RoundButton(std::string_view id, std::string_view icon, const ImVec2& size, const ImVec2& uvMin, const ImVec2& uvMax, bool isCloseTab)
 {
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     if (window->SkipItems)
@@ -329,6 +329,11 @@ bool VecGui::RoundButton(std::string_view id, std::string_view icon, const ImVec
         {
             VecGui::Image(cursor, *iconSheen.get(), *mainBackgroundTexturePath.get(), size, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, { 255,255,255,(int)(255 * 0.7) }, true, BlendMode::overlay);
         }
+    }
+    //FIX: find source of instead of this
+    if (isCloseTab)
+    {
+        return held;
     }
     return clicked;
 }

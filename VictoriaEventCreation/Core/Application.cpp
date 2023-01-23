@@ -26,6 +26,7 @@ namespace BaseApp {
     Application::Application()
     {
         Settings::LoadSettings();
+        Sound::SoundSystem::InitSoundSystem();
         InitWindow();
         Window* eventThingy = new EventTool(windows);
         windows.push_back(eventThingy);
@@ -39,8 +40,7 @@ namespace BaseApp {
         Properties* properties = new Properties(windows);
         windows.push_back(properties);
 
-        Sound::SoundSystem::InitSoundSystem();
-
+        
         Run();
     }
 
@@ -80,6 +80,14 @@ namespace BaseApp {
         for (size_t i = 0; i < windows.size(); i++)
         {
             windows[i]->Execute();
+        }
+
+        for (size_t i = 0; i < windows.size(); i++)
+        {
+            if (windows[i]->requestDelete)
+            {
+                windows.erase(windows.begin() + i);
+            }
         }
     }
 
@@ -164,6 +172,10 @@ namespace BaseApp {
             {
                 Exit();
                 windowHasOpened = false;
+                isSelected = false;
+                ImGui::End();
+                requestDelete = true;
+                return;
             }
             else
             {
@@ -180,6 +192,7 @@ namespace BaseApp {
 
 
     }
+
     void Window::Properties()
     {
         ImGui::Text("No Properties");

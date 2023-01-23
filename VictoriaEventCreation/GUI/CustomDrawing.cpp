@@ -9,6 +9,19 @@
 static inline ImVec2 operator+(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x + rhs.x, lhs.y + rhs.y); }
 static inline ImVec2 operator-(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x - rhs.x, lhs.y - rhs.y); }
 
+static inline ImVec2 operator*(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x * rhs.x, lhs.y * rhs.y); }
+static inline ImVec2 operator/(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x / rhs.x, lhs.y / rhs.y); }
+
+static inline bool operator==(const ImVec2& lhs, const ImVec2& rhs)
+{
+    ImVec2 size = lhs - rhs;
+    size.x = size.x * size.x;
+    size.y = size.y * size.y;
+    float length = sqrt(size.x + size.y);
+    return length < 0.001f;
+}
+
+
 void GetAxisPosition(const size_t& axis, float& axisValue, float startValue, const ImVec2& MiddleValues, float endValue, float scale)
 {
     if (axis == 0)
@@ -51,7 +64,7 @@ void WriteIndexNineSlice(ImDrawIdx* IndexWrite, const ImDrawIdx& index, ImDrawLi
     draw_list->_IdxWritePtr += 54;
 }
 
-void PrimNineGridUV(const ImVec2& startPos, const ImVec2& endPos, const ImVec4& middleRect,const ImVec2& uv_a, const ImVec4& middleUvRect, const ImVec2& uv_c, ImU32 col, float scale)
+void PrimNineGridUV(const ImVec2& startPos, const ImVec2& endPos, const ImVec4& middleRect, const ImVec2& uv_a, const ImVec4& middleUvRect, const ImVec2& uv_c, ImU32 col, float scale)
 {
     auto draw_list = ImGui::GetWindowDrawList();
     auto VertexCurrentIndex = draw_list->_VtxCurrentIdx;
@@ -59,7 +72,7 @@ void PrimNineGridUV(const ImVec2& startPos, const ImVec2& endPos, const ImVec4& 
 
     auto IndexWrite = draw_list->_IdxWritePtr;
     auto VertexWrite = draw_list->_VtxWritePtr;
-    
+
     const int numberOfVertices = 16;
 
     //define vertices
@@ -70,20 +83,20 @@ void PrimNineGridUV(const ImVec2& startPos, const ImVec2& endPos, const ImVec4& 
             ImVec2 position;
             ImVec2 uv;
 
-            GetAxisPosition(x,position.x,startPos.x,{middleRect.x,middleRect.z},endPos.x, scale);
-            GetAxisPosition(y,position.y,startPos.y,{middleRect.y,middleRect.w},endPos.y, scale);
+            GetAxisPosition(x, position.x, startPos.x, { middleRect.x,middleRect.z }, endPos.x, scale);
+            GetAxisPosition(y, position.y, startPos.y, { middleRect.y,middleRect.w }, endPos.y, scale);
 
             GetAxisPosition(x, uv.x, uv_a.x, { middleUvRect.x,middleUvRect.z }, uv_c.x, 1);
             GetAxisPosition(y, uv.y, uv_a.y, { middleUvRect.y,middleUvRect.w }, uv_c.y, 1);
 
-            VertexWrite[x*4+y].pos = position; VertexWrite[x * 4 + y].uv = uv; VertexWrite[x * 4 + y].col = col;
+            VertexWrite[x * 4 + y].pos = position; VertexWrite[x * 4 + y].uv = uv; VertexWrite[x * 4 + y].col = col;
         }
     }
 
     WriteIndexNineSlice(IndexWrite, index, draw_list, numberOfVertices);
 }
 
-void PrimNineGridUVAlphaMask(const ImVec2& startPos, const ImVec2& endPos, const ImVec4& middleRect,const ImVec2& uv_a_start, const ImVec4& middleUvAlphaRect, const ImVec2& uv_a_end, const ImVec2& uv_start,const ImVec2& uv_end,ImU32 col, float scale)
+void PrimNineGridUVAlphaMask(const ImVec2& startPos, const ImVec2& endPos, const ImVec4& middleRect, const ImVec2& uv_a_start, const ImVec4& middleUvAlphaRect, const ImVec2& uv_a_end, const ImVec2& uv_start, const ImVec2& uv_end, ImU32 col, float scale)
 {
     auto draw_list = ImGui::GetWindowDrawList();
     auto VertexCurrentIndex = draw_list->_VtxCurrentIdx;
@@ -91,7 +104,7 @@ void PrimNineGridUVAlphaMask(const ImVec2& startPos, const ImVec2& endPos, const
 
     auto IndexWrite = draw_list->_IdxWritePtr;
     auto VertexWrite = draw_list->_VtxWritePtr;
-    
+
     const int numberOfVertices = 16;
 
     //define vertices
@@ -192,7 +205,7 @@ void DrawNineSliceImage(Texture& texture, Texture& alphaMask, ImVec2 pos, ImVec2
         draw_list->PushTextureID(texture.textureID);
 
     draw_list->PrimReserve(54, 16);
-    PrimNineGridUVAlphaMask(pos, pos + size, middleSlice,uvAlphaMin,middleUvSlice,uvAlphaMax,uvMin,uvMax, color, scale);
+    PrimNineGridUVAlphaMask(pos, pos + size, middleSlice, uvAlphaMin, middleUvSlice, uvAlphaMax, uvMin, uvMax, color, scale);
     draw_list->CmdBuffer.back().AlphaId = alphaMask.textureID;
     draw_list->CmdBuffer.back().Overlay = colorBlend;
 
@@ -224,7 +237,7 @@ void VictoriaWindow::RenderWindowDecorations(ImGuiWindow* window, const ImRect& 
     const static auto mainTexturePath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\popup_bg_frame.dds");
     const static auto backgroundTexturePath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\popup_bg.dds");
     const static auto velvetOverlayPath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\textures\\velvet_texture.dds");
-    
+
     const static auto defaultBackground = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\default_bg.dds");
     const static auto smallFramePath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\bg_frame_small.dds");
     const static auto smallFrameMaskPath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\bg_frame_small_mask.dds");
@@ -307,33 +320,42 @@ void VictoriaWindow::RenderWindowDecorations(ImGuiWindow* window, const ImRect& 
             ImDrawList* bg_draw_list = window->DockIsActive ? window->DockNode->HostWindow->DrawList : window->DrawList;
             if (window->DockIsActive || (flags & ImGuiWindowFlags_DockNodeHost))
                 bg_draw_list->ChannelsSetCurrent(DOCKING_HOST_DRAW_CHANNEL_BG);
-            
+
             if (!(window->DC.ChildWindows.Size == 1 && window->DockOrder == -1 && window->ViewportId == 0x11111111))
             {
                 ImGuiWindowFlags IsChild = ImGuiWindowFlags_ChildMenu | ImGuiWindowFlags_Popup | ImGuiWindowFlags_ChildWindow | ImGuiWindowFlags_Tooltip;
                 ImGuiWindowFlags isDock = ImGuiWindowFlags_DockNodeHost;
 
+                float windowWidth = window->Rect().GetSize().x;
+                float windowHeight = window->Rect().GetSize().y;
                 if (flags & ImGuiWindowFlags_NoTitleBar || window->DockIsActive)
                 {
-                    ImGui::PushClipRect({ window->TitleBarRect().Min.x, window->TitleBarRect().Max.y }, { window->Rect().Max.x,window->Rect().Max.y }, true);
+                    if (window->DockIsActive)
+                    {
+                        ImGui::PushClipRect({ window->TitleBarRect().Min.x, window->TitleBarRect().Min.y + g.FontSize + 9.0f * 2 + 8 }, { window->Rect().Max.x,window->Rect().Max.y }, true);
+                    }
+                    else
+                    {
+                        ImGui::PushClipRect({ window->TitleBarRect().Min.x, window->TitleBarRect().Max.y }, { window->Rect().Max.x,window->Rect().Max.y }, true);
+                    }
                 }
                 //background
                 if (!(flags & IsChild))
                 {
                     DrawNineSliceImage(*backgroundTexturePath.get(), window->Pos, window->Size, { 162,162,162,162 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::normal);
-                    DrawNineSliceImage(*velvetOverlayPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 162,162,162,162 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::overlay);
+                    DrawNineSliceImage(*velvetOverlayPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 162,162,162,162 }, { 0,0 }, { windowWidth / velvetOverlayPath.get()->width * 2.0f ,windowHeight / velvetOverlayPath.get()->height * 2.0f }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::overlay);
                 }
                 else if (flags & ImGuiWindowFlags_Tooltip)
                 {
                     DrawNineSliceImage(*TooltipPath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::normal);
                     DrawNineSliceImage(*TooltipShadingPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::overlay);
-                    DrawNineSliceImage(*velvetOverlayPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::overlay);
+                    DrawNineSliceImage(*velvetOverlayPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { windowWidth / velvetOverlayPath.get()->width * 2.0f ,windowHeight / velvetOverlayPath.get()->height * 2.0f }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::overlay);
                     DrawNineSliceImage(*ClothOverlayPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.15f }, 2, BlendMode::overlay);
                 }
                 else
                 {
-                    DrawNineSliceImage(*defaultBackground.get(), *smallFrameMaskPath.get(), window->Pos, window->Size, { 90,90,90,90 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::normal);
-                    DrawNineSliceImage(*velvetOverlayPath.get(), *smallFrameMaskPath.get(), window->Pos, window->Size, { 90,90,90,90 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::overlay);
+                    DrawNineSliceImage(*defaultBackground.get(), *smallFrameMaskPath.get(), window->Pos, window->Size, { 90,90,90,90 }, { 0,0 }, { windowWidth / defaultBackground.get()->width * 2.0f ,windowHeight / defaultBackground.get()->height * 2.0f }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::normal);
+                    DrawNineSliceImage(*velvetOverlayPath.get(), *smallFrameMaskPath.get(), window->Pos, window->Size, { 90,90,90,90 }, { 0,0 }, { windowWidth / velvetOverlayPath.get()->width * 2.0f ,windowHeight / velvetOverlayPath.get()->height * 2.0f }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::overlay);
                 }
 
                 //Header Background
@@ -347,13 +369,13 @@ void VictoriaWindow::RenderWindowDecorations(ImGuiWindow* window, const ImRect& 
                     DrawNineSliceImage(*headerShading.get(), *headerMask.get(), window->TitleBarRect().Min, window->TitleBarRect().GetSize(), { 162,162,162,162 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.3f }, 2, BlendMode::overlay);
                     DrawNineSliceImage(*FancyPattern2.get(), *headerMask.get(), window->TitleBarRect().Min, window->TitleBarRect().GetSize(), { 162,162,162,162 }, { 0,0 }, { headerWidth / FancyPattern2.get()->width * 2.0f,headerHeight / FancyPattern2.get()->height * 2.0f }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.2f }, 2, BlendMode::overlay);
                     DrawNineSliceImage(*ClothOverlayPath.get(), *headerMask.get(), window->TitleBarRect().Min, window->TitleBarRect().GetSize(), { 162,162,162,162 }, { 0,0 }, { headerWidth / ClothOverlayPath.get()->width * 2,headerHeight / ClothOverlayPath.get()->height * 2 }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.1f }, 2, BlendMode::overlay);
-                    
-                    
+
+
                     //DrawNineSliceImage(*HeaderDivider.get(), *headerMask.get(), { window->TitleBarRect().Min.x,window->TitleBarRect().Max.y - 12 }, { window->TitleBarRect().Max.x,8 }, { 162,162,162,162 }, { 0,0 }, { headerWidth / HeaderDivider.get()->width * 2, 1 }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.1f }, 2, BlendMode::overlay);
-                    
-                    
-                    VecGui::Image({ window->TitleBarRect().Min.x,window->TitleBarRect().Max.y - 12 }, *HeaderDivider.get(), { window->TitleBarRect().GetSize().x-16,8}, {0,0}, {headerWidth / HeaderDivider.get()->width * 2, 1}, ImColor{1.0f,1.0f,1.0f,1.0f}, true, BlendMode::normal);
-                    
+
+
+                    VecGui::Image({ window->TitleBarRect().Min.x,window->TitleBarRect().Max.y - 12 }, *HeaderDivider.get(), { window->TitleBarRect().GetSize().x - 16,8 }, { 0,0 }, { headerWidth / HeaderDivider.get()->width * 2, 1 }, ImColor{ 1.0f,1.0f,1.0f,1.0f }, true, BlendMode::normal);
+
                 }
 
                 //Foreground
@@ -381,7 +403,7 @@ void VictoriaWindow::RenderWindowDecorations(ImGuiWindow* window, const ImRect& 
 
 
             bg_draw_list->AddRectFilled(window->Pos, window->Pos + window->Size, bg_col, window_rounding, (flags & ImGuiWindowFlags_NoTitleBar) ? 0 : ImDrawFlags_RoundCornersBottom);
-            
+
 
 
             if (window->DockIsActive || (flags & ImGuiWindowFlags_DockNodeHost))
@@ -456,7 +478,7 @@ void VictoriaWindow::RenderWindowTitleBarContents(ImGuiWindow* window, const ImR
     const ImGuiItemFlags item_flags_backup = g.CurrentItemFlags;
     g.CurrentItemFlags |= ImGuiItemFlags_NoNavDefaultFocus;
     window->DC.NavLayerCurrent = ImGuiNavLayer_Menu;
-    
+
 
 
 
@@ -464,7 +486,7 @@ void VictoriaWindow::RenderWindowTitleBarContents(ImGuiWindow* window, const ImR
 
     ImFont* headerFont = ImGui::GetIO().Fonts->Fonts[2];
     ImGui::PushFont(headerFont);
-    
+
 
     // Layout buttons
     // FIXME: Would be nice to generalize the subtleties expressed here into reusable code.
@@ -503,14 +525,12 @@ void VictoriaWindow::RenderWindowTitleBarContents(ImGuiWindow* window, const ImR
     {
         ImVec2 position = ImGui::GetCursorScreenPos();
         close_button_pos = close_button_pos + ImVec2{ 0,14 };
-        ImGui::SetCursorScreenPos(close_button_pos);
-
-
-        VecGui::Image(close_button_pos - ImVec2{ 3,3 }, * background.get(), {53,53}, {0,0}, {1,1}, {255,255,255,255}, true);
-        if (VecGui::RoundButton("#CLOSE", "close", { 47,47 }))
+        VecGui::Image(close_button_pos - ImVec2{ 3,3 }, *background.get(), { 53,53 }, { 0,0 }, { 1,1 }, { 255,255,255,255 }, true);
+        if (VictoriaWindow::CloseButton("##CLOSE", { 47,47 }, close_button_pos))
+        {
             *p_open = false;
+        }
 
-        ImGui::SetCursorScreenPos(position);
     }
 
     window->DC.NavLayerCurrent = ImGuiNavLayer_Main;
@@ -552,4 +572,130 @@ void VictoriaWindow::RenderWindowTitleBarContents(ImGuiWindow* window, const ImR
     //if (g.IO.KeyCtrl) window->DrawList->AddRect(clip_r.Min, clip_r.Max, IM_COL32(255, 128, 0, 255)); // [DEBUG]
     ImGui::RenderTextClipped(layout_r.Min, layout_r.Max, name, NULL, &text_size, style.WindowTitleAlign, &clip_r);
     ImGui::PopFont();
+}
+
+void VictoriaWindow::RenderDockTabBar(ImGuiWindow* window, const ImRect& title_bar_rect, ImGuiDockNode* node)
+{
+    const static auto defaultBackground = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\default_bg.dds");
+
+    const static auto smallFramePath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\bg_frame_small.dds");
+    const static auto smallFrameMaskPath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\bg_frame_small_mask.dds");
+    const static auto velvetOverlayPath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\textures\\velvet_texture.dds");
+
+    float windowWidth = node->Rect().GetSize().x;
+    float windowHeight = node->Rect().GetSize().y;
+    ImGui::PushClipRect(title_bar_rect.Min + ImVec2{ 0,-8 }, title_bar_rect.Max, true);
+
+    DrawNineSliceImage(*defaultBackground.get(), *smallFrameMaskPath.get(), node->Pos, node->Size, { 90,90,90,90 }, { 0,0 }, { windowWidth / defaultBackground.get()->width * 2.0f ,windowHeight / defaultBackground.get()->height * 2.0f }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::normal);
+    DrawNineSliceImage(*velvetOverlayPath.get(), *smallFrameMaskPath.get(), node->Pos, node->Size, { 90,90,90,90 }, { 0,0 }, { windowWidth / velvetOverlayPath.get()->width * 2.0f ,windowHeight / velvetOverlayPath.get()->height * 2.0f }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::overlay);
+
+    DrawNineSliceImage(*smallFramePath.get(), node->Pos, node->Size, { 90,90,90,90 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::normal);
+
+    ImGui::PopClipRect();
+}
+
+// Render A Tab
+void VictoriaWindow::TabItemBackground(ImDrawList* draw_list, const ImRect& bb, ImGuiTabItemFlags flags, ImU32 col, bool held, bool hovered, bool tab_contents_visible)
+{
+    const static auto mainButton = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\tabs\\tab_button_1.dds");
+    const static auto tabSelected = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\tabs\\tab_button_1_selected.dds");
+    const static auto velvetOverlayPath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\textures\\velvet_texture.dds");
+
+    bool loaded = true;
+
+    if (!loaded)
+    {
+        // While rendering tabs, we trim 1 pixel off the top of our bounding box so they can fit within a regular frame height while looking "detached" from it.
+        ImGuiContext& g = *GImGui;
+        const float width = bb.GetWidth();
+        IM_UNUSED(flags);
+        IM_ASSERT(width > 0.0f);
+        const float rounding = ImMax(0.0f, ImMin((flags & ImGuiTabItemFlags_Button) ? g.Style.FrameRounding : g.Style.TabRounding, width * 0.5f - 1.0f));
+        const float y1 = bb.Min.y + 1.0f;
+        const float y2 = bb.Max.y + ((flags & ImGuiTabItemFlags_Preview) ? 0.0f : -1.0f);
+        draw_list->PathLineTo(ImVec2(bb.Min.x, y2));
+        draw_list->PathArcToFast(ImVec2(bb.Min.x + rounding, y1 + rounding), rounding, 6, 9);
+        draw_list->PathArcToFast(ImVec2(bb.Max.x - rounding, y1 + rounding), rounding, 9, 12);
+        draw_list->PathLineTo(ImVec2(bb.Max.x, y2));
+        draw_list->PathFillConvex(col);
+        if (g.Style.TabBorderSize > 0.0f)
+        {
+            draw_list->PathLineTo(ImVec2(bb.Min.x + 0.5f, y2));
+            draw_list->PathArcToFast(ImVec2(bb.Min.x + rounding + 0.5f, y1 + rounding + 0.5f), rounding, 6, 9);
+            draw_list->PathArcToFast(ImVec2(bb.Max.x - rounding - 0.5f, y1 + rounding + 0.5f), rounding, 9, 12);
+            draw_list->PathLineTo(ImVec2(bb.Max.x - 0.5f, y2));
+            draw_list->PathStroke(ImGui::GetColorU32(ImGuiCol_Border), 0, g.Style.TabBorderSize);
+        }
+        return;
+    }
+
+    if (!tab_contents_visible)
+    {
+        ImVec2 uvMin = { 0,0 };
+
+        const ImVec2 frameSize = { 80,44 };
+        const ImVec2 frameSizeUV = { frameSize / ImVec2{(float)mainButton.get()->width,(float)mainButton.get()->height} };
+
+        ImVec2 uvMax = frameSizeUV;
+
+        if (hovered)
+        {
+            uvMin = { frameSizeUV.x,0 };
+            uvMax = { frameSizeUV.x * 2,1 };
+        }
+        DrawNineSliceImage(*mainButton.get(), bb.Min, bb.GetSize(), { 10,30,10,9 }, uvMin, uvMax, IM_COL32_WHITE, 1, BlendMode::normal);
+    }
+    else
+    {
+        DrawNineSliceImage(*tabSelected.get(), bb.Min, bb.GetSize(), { 10,30,10,9 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 1, BlendMode::normal);
+    }
+
+}
+
+void VictoriaWindow::TabSeperator(ImGuiTabBar* tab_bar, ImGuiWindow* window)
+{
+    const static auto seperatorTexture = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\tabs\\tab_divider.dds");
+    float separator_min_x = tab_bar->BarRect.Min.x + tab_bar->WidthAllTabs;
+    float separator_max_x = tab_bar->BarRect.Max.x + 29;
+
+    if (window->DockNode)
+    {
+        auto dock_node = window->DockNode;
+        separator_min_x = dock_node->Pos.x + window->WindowBorderSize;
+        separator_max_x = dock_node->Pos.x + dock_node->Size.x - window->WindowBorderSize;
+
+    }
+    VecGui::Image({ separator_min_x,tab_bar->BarRect.Min.y }, *seperatorTexture.get(), { separator_max_x - separator_min_x,tab_bar->BarRect.GetHeight() });
+}
+
+bool VictoriaWindow::CloseButton(std::string_view id, const ImVec2& size, const ImVec2& pos)
+{
+    ImVec2 position = ImGui::GetCursorScreenPos();
+    ImGui::SetCursorScreenPos(pos);
+
+    bool pressed = false;
+    ImVec2 actualSize = size;
+    if (size == ImVec2(0, 0))
+    {
+        actualSize = ImVec2(ImGui::GetFontSize() + 6, ImGui::GetFontSize() + 6);
+    }
+    std::string new_id = id.data();
+
+    if (VecGui::RoundButton("#CLOSE" + new_id, "close", actualSize, { 0,0 }, { 1,1 }, true))
+    {
+        pressed = true;
+    }
+
+    ImGui::SetCursorScreenPos(position);
+    return pressed;
+}
+
+bool VictoriaWindow::CloseButton(ImGuiID id, const ImVec2& size, const ImVec2& pos)
+{
+    ImGui::PushID(id);
+
+    bool pressed = CloseButton("#CLOSETAB", size, pos);
+
+    ImGui::PopID();
+    return pressed;
 }
