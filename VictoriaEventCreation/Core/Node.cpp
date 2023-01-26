@@ -117,7 +117,7 @@ void Param<Sound::Event>::EditableField()
     ImGui::PushItemWidth(-4);
     ImGui::PushID(&name);
 
-    if (ImGui::BeginCombo("Sounds", preview.c_str(), 0))
+    if (ImGui::BeginCombo("##Sounds", preview.c_str(), 0))
     {
         for (size_t i = 0; i < soundSystem.events.size(); i++)
         {
@@ -142,8 +142,8 @@ void Param<Sound::Event>::EditableField()
         {
             soundSystem.events[selected].Play();
         }
-
-        if (VecGui::RoundButton("stop", "close", { 47,47 }))
+        ImGui::SameLine();
+        if (VecGui::RoundButton({ "stop" }, "close", { 47,47 }))
         {
             soundSystem.events[selected].Stop();
         }

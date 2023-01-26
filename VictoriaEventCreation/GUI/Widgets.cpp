@@ -5,6 +5,8 @@
 #include "../Core/imgui/imgui_internal.h"
 #include "../Core/ResourceHandler.h"
 
+static inline ImVec2 operator*(const ImVec2& lhs, const float rhs) { return ImVec2(lhs.x * rhs, lhs.y * rhs); }
+
 static inline ImVec2 operator+(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x + rhs.x, lhs.y + rhs.y); }
 static inline ImVec2 operator-(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x - rhs.x, lhs.y - rhs.y); }
 
@@ -271,11 +273,9 @@ bool VecGui::SliderScalar(std::string_view label, ImGuiDataType type, void* valu
 }
 
 
-bool VecGui::RoundButton(std::string_view id, std::string_view icon, const ImVec2& size, const ImVec2& uvMin, const ImVec2& uvMax, bool isCloseTab)
+bool VecGui::RoundButton(Id id, std::string_view icon, const ImVec2& size, const ImVec2& uvMin, const ImVec2& uvMax, bool isCloseTab)
 {
     ImGuiWindow* window = ImGui::GetCurrentWindow();
-    if (window->SkipItems)
-        return false;
 
 
     const auto Icons = Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\buttons\\button_icons" / (std::string(icon) + ".dds");
@@ -284,22 +284,32 @@ bool VecGui::RoundButton(std::string_view id, std::string_view icon, const ImVec
     const static auto largeTexture = ResourceHandler::GetTexture(buttons / "round_button_big_wood.dds");
     const static auto mousePress = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\buttons\\default_button_mousepress.dds");
     const static auto mouseOver = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\buttons\\default_button_mouseover.dds");
-
     const static auto iconSheen = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\buttons\\button_icons\\icon_button_mouse_enter.dds");
 
 
     ImVec2 cursor = ImGui::GetCursorScreenPos();
 
-    const ImGuiID imId = window->GetID(id.data());
-
     const ImRect bb(cursor, cursor + size);
     ImGui::ItemSize(size);
-    if (!ImGui::ItemAdd(bb, imId))
-        return false;
+    bool isClipped = false;
+    if (!isCloseTab)
+    {
+        if (!ImGui::ItemAdd(bb, id))
+            return false;
+    }
+    else
+    {
+        isClipped = !ImGui::ItemAdd(bb, id);
+    }
+
 
 
     bool hovered, held;
-    bool clicked = ImGui::ButtonBehavior(bb, imId, &hovered, &held, 0);
+    bool clicked = ImGui::ButtonBehavior(bb, id, &hovered, &held, 0);
+    if (isClipped)
+    {
+        return clicked;
+    }
 
     auto mainBackgroundTexturePath = largeTexture;
     if (size.x < 78 || size.y < 78)
@@ -311,12 +321,12 @@ bool VecGui::RoundButton(std::string_view id, std::string_view icon, const ImVec
 
     if (hovered && !held)
     {
-        VecGui::Image(cursor, *mouseOver.get(), *mainBackgroundTexturePath.get(), size, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 },{ 255,255,255,(int)(255 * 0.5) }, true, BlendMode::color_dodge);
+        Image(cursor, *mouseOver.get(), *mainBackgroundTexturePath.get(), size, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 },{ 255,255,255,(int)(255 * 0.5) }, true, BlendMode::color_dodge);
     }
 
     if (held)
     {
-        VecGui::Image(cursor, *mousePress.get(), *mainBackgroundTexturePath.get(), size, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, { 255,255,255,(int)(255 * 1) }, true, BlendMode::overlay);
+        Image(cursor, *mousePress.get(), *mainBackgroundTexturePath.get(), size, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, { 255,255,255,(int)(255 * 1) }, true, BlendMode::overlay);
     }
 
 
@@ -327,13 +337,8 @@ bool VecGui::RoundButton(std::string_view id, std::string_view icon, const ImVec
         Image(cursor, *mainTexturePath.get(), size, { 0,0 }, { 1,1 }, IM_COL32_WHITE, true);
         if (hovered && !held)
         {
-            VecGui::Image(cursor, *iconSheen.get(), *mainBackgroundTexturePath.get(), size, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, { 255,255,255,(int)(255 * 0.7) }, true, BlendMode::overlay);
+            Image(cursor, *iconSheen.get(), *mainBackgroundTexturePath.get(), size, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, { 255,255,255,(int)(255 * 0.7) }, true, BlendMode::overlay);
         }
-    }
-    //FIX: find source of instead of this
-    if (isCloseTab)
-    {
-        return held;
     }
     return clicked;
 }

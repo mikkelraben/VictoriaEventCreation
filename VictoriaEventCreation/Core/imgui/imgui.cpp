@@ -7287,7 +7287,7 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
         const ImRect title_bar_rect = normal_title_bar_rect;
         window->OuterRectClipped = outer_rect;
 
-        ImRect margins = { 0,0,0,20 };
+        ImRect margins = { 0,32,0,20 };
         if (flags & (ImGuiWindowFlags_Tooltip | ImGuiWindowFlags_ChildWindow | ImGuiWindowFlags_ChildMenu))
         {
             margins = { 0,12,0,0 };
@@ -7309,6 +7309,8 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
 
         if ((window->DC.ChildWindows.Size == 1 && window->DockOrder == -1 && window->ViewportId == 0x11111111))
         {
+            normal_title_bar_rect = { 0,0,0,0 };
+
             margins = { 0,0,0,0 };
             window->WindowPadding = { 0,0 };
         }
@@ -7318,7 +7320,7 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
         if (window->DockIsActive)
         {
             window->OuterRectClipped.Min.y += window->TitleBarHeight();
-            margins = { 0,-30,0,20 };
+            margins = { 0,0,0,20 };
         }
         window->OuterRectClipped.ClipWith(host_rect);
 
@@ -16469,7 +16471,7 @@ static void ImGui::DockNodeCalcTabBarLayout(const ImGuiDockNode* node, ImRect* o
     ImGuiContext& g = *GImGui;
     ImGuiStyle& style = g.Style;
 
-    ImRect r = ImRect(node->Pos.x, node->Pos.y+8, node->Pos.x + node->Size.x, node->Pos.y + g.FontSize + 9.0f * 2.0f + 8);
+    ImRect r = ImRect(node->Pos.x, node->Pos.y, node->Pos.x + node->Size.x, node->Pos.y + g.FontSize + 9.0f * 2.0f + 8);
     if (out_title_rect) { *out_title_rect = r; }
 
     r.Min.x += style.WindowBorderSize;

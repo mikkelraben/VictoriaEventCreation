@@ -164,6 +164,8 @@ namespace BaseApp {
         }
 
         ImGui::Begin(name.c_str(), closeWindow, windowFlags);
+        //updated isSelected
+        isSelected = ImGui::IsWindowFocused(ImGuiHoveredFlags_ChildWindows);
 
         //if window should close
         if (!isWindowOpen)
@@ -183,8 +185,6 @@ namespace BaseApp {
             }
         }
 
-        //updated isSelected
-        isSelected = ImGui::IsWindowFocused();
         //call virtual function
         Run();
 

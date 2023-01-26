@@ -2,11 +2,14 @@
 #include "../Core/pch.h"
 #include "Windows.h"
 #include "../Sound/BankLoad.h"
+#include "../Core/imgui/imgui_internal.h"
 #include "Widgets.h"
 
 void EventTool::Run()
 {
+    ImGui::BeginChild("Event Window", { 1190,808 }, false, VictoriaEventWindow);
 
+    ImGui::EndChild();
 }
 
 void EventTool::Properties()

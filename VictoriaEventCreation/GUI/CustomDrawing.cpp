@@ -6,6 +6,8 @@
 #include "../Core/ResourceHandler.h"
 #include "Widgets.h"
 
+static inline ImVec2 operator*(const ImVec2& lhs, const float rhs) { return ImVec2(lhs.x * rhs, lhs.y * rhs); }
+
 static inline ImVec2 operator+(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x + rhs.x, lhs.y + rhs.y); }
 static inline ImVec2 operator-(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x - rhs.x, lhs.y - rhs.y); }
 
@@ -330,17 +332,17 @@ void VictoriaWindow::RenderWindowDecorations(ImGuiWindow* window, const ImRect& 
                 float windowHeight = window->Rect().GetSize().y;
                 if (flags & ImGuiWindowFlags_NoTitleBar || window->DockIsActive)
                 {
-                    if (window->DockIsActive)
-                    {
-                        ImGui::PushClipRect({ window->TitleBarRect().Min.x, window->TitleBarRect().Min.y + g.FontSize + 9.0f * 2 + 8 }, { window->Rect().Max.x,window->Rect().Max.y }, true);
-                    }
-                    else
+                    //if (window->DockIsActive)
+                    //{
+                    //    ImGui::PushClipRect({ window->TitleBarRect().Min.x, window->TitleBarRect().Min.y + g.FontSize + 9.0f * 2 + 8 }, { window->Rect().Max.x,window->Rect().Max.y }, true);
+                    //}
+                    //else
                     {
                         ImGui::PushClipRect({ window->TitleBarRect().Min.x, window->TitleBarRect().Max.y }, { window->Rect().Max.x,window->Rect().Max.y }, true);
                     }
                 }
                 //background
-                if (!(flags & IsChild))
+                if (!(flags & IsChild) || flags & VictoriaEventWindow)
                 {
                     DrawNineSliceImage(*backgroundTexturePath.get(), window->Pos, window->Size, { 162,162,162,162 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::normal);
                     DrawNineSliceImage(*velvetOverlayPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 162,162,162,162 }, { 0,0 }, { windowWidth / velvetOverlayPath.get()->width * 2.0f ,windowHeight / velvetOverlayPath.get()->height * 2.0f }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::overlay);
@@ -359,27 +361,39 @@ void VictoriaWindow::RenderWindowDecorations(ImGuiWindow* window, const ImRect& 
                 }
 
                 //Header Background
-                if (!(flags & ImGuiWindowFlags_NoTitleBar) && !window->DockIsActive)
+                if (!(flags & ImGuiWindowFlags_NoTitleBar) && !window->DockIsActive || flags & VictoriaEventWindow)
                 {
+                    
                     float headerWidth = window->TitleBarRect().GetSize().x;
                     float headerHeight = window->TitleBarRect().GetSize().y;
+                    ImVec2 titleBarMin = window->TitleBarRect().Min;
+                    ImVec2 titleBarSize = window->TitleBarRect().GetSize();
 
-                    DrawNineSliceImage(*headerColor.get(), *headerMask.get(), window->TitleBarRect().Min, window->TitleBarRect().GetSize(), { 162,162,162,162 }, { 0,0 }, { headerWidth / headerColor.get()->width,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::normal);
-                    DrawNineSliceImage(*velvetOverlayPath.get(), *headerMask.get(), window->TitleBarRect().Min, window->TitleBarRect().GetSize(), { 162,162,162,162 }, { 0,0 }, { headerWidth / velvetOverlayPath.get()->width * 2.0f ,headerHeight / velvetOverlayPath.get()->height * 2.0f }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.1f }, 2, BlendMode::overlay);
-                    DrawNineSliceImage(*headerShading.get(), *headerMask.get(), window->TitleBarRect().Min, window->TitleBarRect().GetSize(), { 162,162,162,162 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.3f }, 2, BlendMode::overlay);
-                    DrawNineSliceImage(*FancyPattern2.get(), *headerMask.get(), window->TitleBarRect().Min, window->TitleBarRect().GetSize(), { 162,162,162,162 }, { 0,0 }, { headerWidth / FancyPattern2.get()->width * 2.0f,headerHeight / FancyPattern2.get()->height * 2.0f }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.2f }, 2, BlendMode::overlay);
-                    DrawNineSliceImage(*ClothOverlayPath.get(), *headerMask.get(), window->TitleBarRect().Min, window->TitleBarRect().GetSize(), { 162,162,162,162 }, { 0,0 }, { headerWidth / ClothOverlayPath.get()->width * 2,headerHeight / ClothOverlayPath.get()->height * 2 }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.1f }, 2, BlendMode::overlay);
+                    headerHeight = 82;
+                    titleBarMin = window->Rect().Min;
+                    titleBarSize = { headerWidth, headerHeight };
 
+                    if (flags & VictoriaEventWindow)
+                    {
+                        headerWidth = 1190;
+                    }
+                    
 
-                    //DrawNineSliceImage(*HeaderDivider.get(), *headerMask.get(), { window->TitleBarRect().Min.x,window->TitleBarRect().Max.y - 12 }, { window->TitleBarRect().Max.x,8 }, { 162,162,162,162 }, { 0,0 }, { headerWidth / HeaderDivider.get()->width * 2, 1 }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.1f }, 2, BlendMode::overlay);
+                    DrawNineSliceImage(*headerColor.get(), *headerMask.get(), titleBarMin, titleBarSize, { 162,162,162,162 }, { 0,0 }, { headerWidth / headerColor.get()->width,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::normal);
+                    DrawNineSliceImage(*velvetOverlayPath.get(), *headerMask.get(), titleBarMin, titleBarSize, { 162,162,162,162 }, { 0,0 }, { headerWidth / velvetOverlayPath.get()->width * 2.0f ,headerHeight / velvetOverlayPath.get()->height * 2.0f }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.1f }, 2, BlendMode::overlay);
+                    if (ImGui::IsWindowFocused() || flags & VictoriaEventWindow)
+                    {
+                        DrawNineSliceImage(*headerShading.get(), *headerMask.get(), titleBarMin, titleBarSize, { 162,162,162,162 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.3f }, 2, BlendMode::overlay);
+                    }
+                    DrawNineSliceImage(*FancyPattern2.get(), *headerMask.get(), titleBarMin, titleBarSize, { 162,162,162,162 }, { 0,0 }, { headerWidth / FancyPattern2.get()->width * 2.0f,headerHeight / FancyPattern2.get()->height * 2.0f }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.2f }, 2, BlendMode::overlay);
+                    DrawNineSliceImage(*ClothOverlayPath.get(), *headerMask.get(), titleBarMin, titleBarSize, { 162,162,162,162 }, { 0,0 }, { headerWidth / ClothOverlayPath.get()->width * 2,headerHeight / ClothOverlayPath.get()->height * 2 }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.1f }, 2, BlendMode::overlay);
 
-
-                    VecGui::Image({ window->TitleBarRect().Min.x,window->TitleBarRect().Max.y - 12 }, *HeaderDivider.get(), { window->TitleBarRect().GetSize().x - 16,8 }, { 0,0 }, { headerWidth / HeaderDivider.get()->width * 2, 1 }, ImColor{ 1.0f,1.0f,1.0f,1.0f }, true, BlendMode::normal);
+                    VecGui::Image({ titleBarMin.x,titleBarMin.y + titleBarSize.y - 12 }, *HeaderDivider.get(), { titleBarSize.x - 16,8 }, { 0,0 }, { headerWidth / HeaderDivider.get()->width * 2, 1 }, ImColor{ 1.0f,1.0f,1.0f,1.0f }, true, BlendMode::normal);
 
                 }
 
                 //Foreground
-                if (!(flags & IsChild))
+                if (!(flags & IsChild) || flags & VictoriaEventWindow)
                 {
                     DrawNineSliceImage(*mainTexturePath.get(), window->Pos, window->Size, { 162,162,162,162 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::normal);
                 }
@@ -584,7 +598,7 @@ void VictoriaWindow::RenderDockTabBar(ImGuiWindow* window, const ImRect& title_b
 
     float windowWidth = node->Rect().GetSize().x;
     float windowHeight = node->Rect().GetSize().y;
-    ImGui::PushClipRect(title_bar_rect.Min + ImVec2{ 0,-8 }, title_bar_rect.Max, true);
+    ImGui::PushClipRect(title_bar_rect.Min + ImVec2{ 0,0 }, title_bar_rect.Max, true);
 
     DrawNineSliceImage(*defaultBackground.get(), *smallFrameMaskPath.get(), node->Pos, node->Size, { 90,90,90,90 }, { 0,0 }, { windowWidth / defaultBackground.get()->width * 2.0f ,windowHeight / defaultBackground.get()->height * 2.0f }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::normal);
     DrawNineSliceImage(*velvetOverlayPath.get(), *smallFrameMaskPath.get(), node->Pos, node->Size, { 90,90,90,90 }, { 0,0 }, { windowWidth / velvetOverlayPath.get()->width * 2.0f ,windowHeight / velvetOverlayPath.get()->height * 2.0f }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::overlay);
@@ -681,7 +695,7 @@ bool VictoriaWindow::CloseButton(std::string_view id, const ImVec2& size, const 
     }
     std::string new_id = id.data();
 
-    if (VecGui::RoundButton("#CLOSE" + new_id, "close", actualSize, { 0,0 }, { 1,1 }, true))
+    if (VecGui::RoundButton({ "#CLOSE" + new_id }, "close", actualSize, { 0,0 }, { 1,1 }, true))
     {
         pressed = true;
     }
@@ -692,10 +706,22 @@ bool VictoriaWindow::CloseButton(std::string_view id, const ImVec2& size, const 
 
 bool VictoriaWindow::CloseButton(ImGuiID id, const ImVec2& size, const ImVec2& pos)
 {
-    ImGui::PushID(id);
+    ImVec2 position = ImGui::GetCursorScreenPos();
+    ImGui::SetCursorScreenPos(pos);
 
-    bool pressed = CloseButton("#CLOSETAB", size, pos);
+    bool pressed = false;
+    ImVec2 actualSize = size;
+    if (size == ImVec2(0, 0))
+    {
+        actualSize = ImVec2(ImGui::GetFontSize() + 6, ImGui::GetFontSize() + 6);
+    }
 
-    ImGui::PopID();
+    if (VecGui::RoundButton(id, "close", actualSize, { 0,0 }, { 1,1 }, true))
+    {
+        pressed = true;
+    }
+
+    ImGui::SetCursorScreenPos(position);
     return pressed;
+
 }
