@@ -191,6 +191,9 @@
     <ClInclude Include="Core\Node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GUI\ImGuiHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Core\imgui\LICENSE.txt" />

@@ -2,6 +2,18 @@
 #include "Node.h"
 #include "../Sound/BankLoad.h"
 
+BasicNode* BasicNode::findChildFromName(std::vector<BasicNode*>& children, std::string_view name)
+{
+    for (auto& child : children)
+    {
+        if (child->name == name)
+        {
+            return child;
+        }
+    }
+    return nullptr;
+}
+
 void Node::EditableField()
 {
     ImGui::Text("Hello There");
@@ -113,25 +125,58 @@ YAML::Node Param<std::string>::Serialize()
 void Param<Sound::Event>::EditableField()
 {
     ImGui::Text(name.c_str());
-    ImGui::SameLine();
-    ImGui::PushItemWidth(-4);
     ImGui::PushID(&name);
+    if (VecGui::CheckBox("UI", ui))
+    {
+        if (event)
+        {
+            event = !event;
+        }
+    }
+    ImGui::SameLine();
+    ImGui::Text("UI");
+    ImGui::SameLine();
 
-    if (ImGui::BeginCombo("##Sounds", preview.c_str(), 0))
+    if (VecGui::CheckBox("Event", event))
+    {
+        if (ui)
+        {
+            ui = !ui;
+        }
+    }
+
+    ImGui::SameLine();
+    ImGui::Text("Event");
+
+    std::string filter = "";
+    if (ui)
+    {
+        filter = "event:/SFX/UI/Alerts/";
+    }
+
+    if (event)
+    {
+        filter = "event:/SFX/Events/";
+    }
+
+    ImGui::PushItemWidth(-4);
+    if (VecGui::BeginCombo("##Sounds", preview.c_str(), 0))
     {
         for (size_t i = 0; i < soundSystem.events.size(); i++)
         {
-            bool isSelected = selected == i;
-            if (ImGui::Selectable(soundSystem.events[i].name.c_str()))
+            if (soundSystem.events[i].name.starts_with(filter))
             {
-                preview = soundSystem.events[i].name;
-                selected = i;
-            }
+                bool isSelected = selected == i;
+                if (ImGui::Selectable(soundSystem.events[i].name.c_str()))
+                {
+                    preview = soundSystem.events[i].name;
+                    selected = i;
+                }
 
-            if (isSelected)
-            {
-                ImGui::SetItemDefaultFocus();
-
+                if (isSelected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
             }
         }
         ImGui::EndCombo();

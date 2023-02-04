@@ -25,11 +25,13 @@ namespace VecGui
 
     bool Button(std::string_view id, ImVec2 size = {-1,-1});
     bool RoundButton(Id id, std::string_view icon, const ImVec2& size, const ImVec2& uvMin = {0,0}, const ImVec2& uvMax = {1,1}, bool isCloseTab = false);
-    void CheckBox(std::string_view id, bool& value);
+    bool CheckBox(std::string_view id, bool& value);
     bool SliderInt(std::string_view id, int& value, int min, int max);
     bool SliderFloat(std::string_view id, float& value, float min, float max);
+    bool BeginCombo(const char* label, const char* preview_value, ImGuiComboFlags flags);
 
     bool SliderScalar(std::string_view label, ImGuiDataType type, void* value, const void* min, const void* max);
+    void drawButton(ImVec2 pos, ImVec2 size, bool hovered, bool held, bool actionButton = false);
     bool ImageButton(std::string_view id, Texture& texture, const ImVec2& size, const ImVec2 & uvMin = { 0,0 }, const ImVec2& uvMax = { 1,1 });
     void Image(Texture& texture, ImVec2 size, ImVec2 uvMin = { 0,0 }, ImVec2 uvMax = { 1,1 }, ImColor color = IM_COL32_WHITE, bool isFloating = false, BlendMode colorBlend = BlendMode::normal);
     void Image(ImVec2 Pos, Texture& texture, ImVec2 size, ImVec2 uvMin = { 0,0 }, ImVec2 uvMax = { 1,1 }, ImColor color = IM_COL32_WHITE, bool floating = false, BlendMode colorBlend = BlendMode::normal);

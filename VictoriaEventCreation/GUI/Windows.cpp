@@ -4,11 +4,25 @@
 #include "../Sound/BankLoad.h"
 #include "../Core/imgui/imgui_internal.h"
 #include "Widgets.h"
+#include "ImGuiHelper.h"
 
 void EventTool::Run()
 {
-    ImGui::BeginChild("Event Window", { 1190,808 }, false, VictoriaEventWindow);
+    ImVec2 size = { 1190,808 };
+    ImGui::BeginChild("Event Window", size, false, VictoriaEventWindow);
+    auto param = dynamic_cast<Param<std::string>*>(BasicNode::findChildFromName(object.children, "Title"));
+    if (param)
+    {
+        std::string title = param->variable;
+        ImFont* headerFont = ImGui::GetIO().Fonts->Fonts[2];
+        ImGui::PushFont(headerFont);
+        auto cursor = ImGui::GetCursorPos();
+        ImVec2 text_size = ImGui::CalcTextSize(title.c_str(), 0, true);
+        ImGui::SetCursorPos(cursor + ImVec2{ size.x / 2 - text_size.x / 2, 4});
 
+        ImGui::Text(title.c_str());
+        ImGui::PopFont();
+    }
     ImGui::EndChild();
 }
 

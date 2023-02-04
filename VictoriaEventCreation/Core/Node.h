@@ -9,6 +9,7 @@ struct BasicNode
     virtual YAML::Node Serialize() = 0;
     virtual void Deserialize(const YAML::Node& node) = 0;
     virtual ~BasicNode() = default;
+    static BasicNode* findChildFromName(std::vector<BasicNode*>& children, std::string_view name);
 };
 
 struct Node : public BasicNode
@@ -21,8 +22,6 @@ struct Node : public BasicNode
     YAML::Node Serialize() override;
     void Deserialize(const YAML::Node& node) override;
 };
-
-
 
 template<typename T>
 struct Param : public BasicNode
@@ -41,7 +40,7 @@ struct Param : public BasicNode
 template<>
 struct Param<Sound::Event> : public BasicNode
 {
-    Param(Sound::Event startValue, std::string const& _name) { variable = startValue; name = _name; if (startValue.instance) { FindSelection(); } }
+    Param(Sound::Event startValue, std::string const& _name, bool _ui, bool _event) { variable = startValue; name = _name; if (startValue.instance) { FindSelection(); } ui = _ui; event = _event;}
     Sound::Event variable;
     void EditableField() override;
     YAML::Node Serialize() override;
@@ -55,4 +54,5 @@ private:
     std::string preview = "Pick A Sound";
     Sound::SoundSystem soundSystem;
     int selected = 0;
+    bool ui = false, event = false;
 };

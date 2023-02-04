@@ -239,6 +239,7 @@
     <ClInclude Include="Core\Application.h" />
     <ClInclude Include="Core\Macros.h" />
     <ClInclude Include="Core\Node.h" />
+    <ClInclude Include="GUI\ImGuiHelper.h" />
     <ClInclude Include="Scripting Objects\Event.h" />
     <ClInclude Include="GUI\CustomDrawing.h" />
     <ClInclude Include="GUI\Windows.h" />

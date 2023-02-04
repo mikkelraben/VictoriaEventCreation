@@ -122,18 +122,14 @@ void Graphics::initVulkan()
     {
         throw InitError("Failed to find a suitable Device for Vulkan: " + physicalDeviceReturn.error().message());
     }
+    physicalDeviceReturn.value().features.samplerAnisotropy = VK_TRUE;
     physicalDevice = physicalDeviceReturn.value();
 #pragma endregion
 
 #pragma region LogicalDevice
     vkb::DeviceBuilder deviceBuilder{ physicalDeviceReturn.value() };
-
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT dynamicState3Features{};
-
-    dynamicState3Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT;
-    dynamicState3Features.extendedDynamicState3ColorBlendEquation = VK_TRUE;
-
-    deviceBuilder.add_pNext(&dynamicState3Features);
+    
+    
 
     auto deviceReturn = deviceBuilder.build();
     if (!deviceReturn)

@@ -4,36 +4,10 @@
 #include "CustomDrawing.h"
 #include "../Core/imgui/imgui_internal.h"
 #include "../Core/ResourceHandler.h"
-
-static inline ImVec2 operator*(const ImVec2& lhs, const float rhs) { return ImVec2(lhs.x * rhs, lhs.y * rhs); }
-
-static inline ImVec2 operator+(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x + rhs.x, lhs.y + rhs.y); }
-static inline ImVec2 operator-(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x - rhs.x, lhs.y - rhs.y); }
-
-static inline ImVec2 operator*(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x * rhs.x, lhs.y * rhs.y); }
-static inline ImVec2 operator/(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x / rhs.x, lhs.y / rhs.y); }
-
-static inline bool operator==(const ImVec2& lhs, const ImVec2& rhs)
-{
-    ImVec2 size = lhs - rhs;
-    size.x = size.x * size.x;
-    size.y = size.y * size.y;
-    float length = sqrt(size.x + size.y);
-    return length < 0.001f;
-}
+#include "ImGuiHelper.h"
 
 bool VecGui::Button(std::string_view id, ImVec2 size)
 {
-    const static auto mainTexturePath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\buttons\\default_button_bg.dds");
-    const static auto frameTexturePath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\buttons\\default_button_wood_border.dds");
-    const static auto detailTexturePath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\buttons\\default_button_texture.dds");
-    const static auto bgGradienTexturePath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\buttons\\default_button_bg_gradient.dds");
-    const static auto bevelTexturePath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\buttons\\default_button_bevel.dds");
-    const static auto whiteTexture = ResourceHandler::GetTexture("gfx\\white.dds");
-
-    const static auto mousePress = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\buttons\\default_button_mousepress.dds");
-    const static auto mouseOver = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\buttons\\default_button_mouseover.dds");
-
     ImVec2 cursor = ImGui::GetCursorScreenPos();
     auto& style = ImGui::GetStyle();
 
@@ -63,13 +37,10 @@ bool VecGui::Button(std::string_view id, ImVec2 size)
         imSize.y = 35;
     }
 
-
-
     const ImRect bb(cursor, cursor + imSize);
     ImGui::ItemSize(imSize);
     if (!ImGui::ItemAdd(bb, imId))
         return false;
-
 
     bool hovered, held;
     bool pressed = ImGui::ButtonBehavior(bb, imId, &hovered, &held, 0);
@@ -80,36 +51,7 @@ bool VecGui::Button(std::string_view id, ImVec2 size)
     ImVec2 position = ImGui::GetCursorScreenPos();
     ImGui::SetCursorScreenPos(cursor);
 
-    ImVec2 uvMin = { 0,0 };
-    ImVec2 uvMax = { 38.0f / 114.0f + uvMin.x,1 };
-
-
-
-
-
-    VecGui::NineSliceImage(*mainTexturePath.get(), imSize, { {19.0f,19.0f},{19.0f,19.0f} }, uvMin, uvMax, { 255,255,255,(int)(255 * 0.7) },2,true);
-
-    if (hovered && !held)
-    {
-        VecGui::NineSliceImage(*mouseOver.get(), *mainTexturePath.get(), imSize, { {19.0f,19.0f},{19.0f,19.0f} }, { 0,0 }, { 1,1 }, uvMin, uvMax, { 255,255,255,(int)(255 * 0.5) }, 2, true, BlendMode::color_dodge);
-    }
-
-    if (held)
-    {
-        VecGui::NineSliceImage(*mousePress.get(), *mainTexturePath.get(), imSize, { {19.0f,19.0f},{19.0f,19.0f} }, { 0,0 }, { 1,1 }, uvMin, uvMax, { 255,255,255,(int)(255 * 1) }, 2, true, BlendMode::overlay);
-    }
-
-    ImGui::SetCursorScreenPos(cursor);
-    //VecGui::Image(cursor,*detailTexturePath.get(), *mainTexturePath.get(),size,{0,0}, { size.x/detailTexturePath.get()->width,size.y / detailTexturePath.get()->height }, uvMin, {38.0f / 114.0f + uvMin.x,1});
-    VecGui::NineSliceImage(*frameTexturePath.get(), *mainTexturePath.get(), imSize, { {19.0f,19.0f},{19.0f,19.0f} }, { 0,0 }, { 1, 1 }, uvMin, uvMax, { 255,255,255,(int)(255 * 0.7) },2,true,BlendMode::overlay);
-    VecGui::NineSliceImage(*bgGradienTexturePath.get(), *mainTexturePath.get(), imSize, { {19.0f,19.0f},{19.0f,19.0f} }, { 0,0 }, { 1, 1 }, uvMin, uvMax, { 255,255,255,(int)(255 * 0.5) },2,true, BlendMode::overlay);
-    VecGui::NineSliceImage(*detailTexturePath.get(), *mainTexturePath.get(), imSize, { {19.0f,19.0f},{19.0f,19.0f} }, { 0,0 }, {1,1}, uvMin, uvMax, {255,255,255,(int)(255*0.7)}, 2,true, BlendMode::overlay);
-
-    ImGui::SetCursorScreenPos(cursor + ImVec2{ 2,2 });
-    VecGui::NineSliceImage(*bevelTexturePath.get(), imSize - ImVec2{ 4,4 }, { {75.0f,35.0f},{75.0f,35.0f} }, { 0,0 }, { 1,1 }, { 255,255,255,(int)(255 * 0.7) },2);
-
-    ImGui::SetCursorScreenPos(cursor);
-
+    drawButton(cursor,imSize,hovered,held);
 
     ImGui::RenderTextClipped(bb.Min + style.FramePadding, bb.Max - style.FramePadding, id.data(), NULL, &label_size, style.ButtonTextAlign, &bb);
     ImGui::SetCursorScreenPos(position);
@@ -117,7 +59,7 @@ bool VecGui::Button(std::string_view id, ImVec2 size)
     return pressed;
 }
 
-void VecGui::CheckBox(std::string_view id, bool& value)
+bool VecGui::CheckBox(std::string_view id, bool& value)
 {
     const static auto mainTexturePath = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\buttons\\check_button.dds");
 
@@ -126,7 +68,7 @@ void VecGui::CheckBox(std::string_view id, bool& value)
         ImVec2 size = { 24,24 };
         ImGuiWindow* window = ImGui::GetCurrentWindow();
         if (window->SkipItems)
-            return;
+            return false;
 
 
         ImVec2 cursor = ImGui::GetCursorScreenPos();
@@ -137,9 +79,9 @@ void VecGui::CheckBox(std::string_view id, bool& value)
 
 
         const ImRect bb(cursor, cursor + size);
-        ImGui::ItemSize(size);
+        //ImGui::ItemSize(size);
         if (!ImGui::ItemAdd(bb, imId))
-            return;
+            return false;
 
         bool hovered, held;
         bool pressed = ImGui::ButtonBehavior(bb, imId, &hovered, &held, 0);
@@ -148,10 +90,11 @@ void VecGui::CheckBox(std::string_view id, bool& value)
         {
             value = !value;
         }
+        return pressed;
     }
     else
     {
-        ImGui::Checkbox(id.data(), &value);
+        return ImGui::Checkbox(id.data(), &value);
     }
 
 }
@@ -166,10 +109,72 @@ bool VecGui::SliderFloat(std::string_view id, float& value, float min, float max
     return SliderScalar(id, ImGuiDataType_Float, &value, &min, &max);
 }
 
+bool VecGui::BeginCombo(const char* label, const char* preview_value, ImGuiComboFlags flags)
+{
+    const static auto expandIcon = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\buttons\\expand_arrow_expanded.dds");
+
+    ImGuiContext& g = *GImGui;
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
+
+    ImGuiNextWindowDataFlags backup_next_window_data_flags = g.NextWindowData.Flags;
+    g.NextWindowData.ClearFlags(); // We behave like Begin() and need to consume those values
+    if (window->SkipItems)
+        return false;
+
+    const ImGuiStyle& style = g.Style;
+    const ImGuiID id = window->GetID(label);
+    RE_ASSERT((flags & (ImGuiComboFlags_NoArrowButton | ImGuiComboFlags_NoPreview)) != (ImGuiComboFlags_NoArrowButton | ImGuiComboFlags_NoPreview)); // Can't use both flags together
+
+    const float arrow_size = (flags & ImGuiComboFlags_NoArrowButton) ? 0.0f : ImGui::GetFrameHeight();
+    const ImVec2 label_size = ImGui::CalcTextSize(label, NULL, true);
+    const float w = (flags & ImGuiComboFlags_NoPreview) ? arrow_size : ImGui::CalcItemWidth();
+    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + ImVec2(w, label_size.y + 6.0f + style.FramePadding.y * 2.0f));
+    const ImRect total_bb(bb.Min, bb.Max + ImVec2(label_size.x > 0.0f ? style.ItemInnerSpacing.x + label_size.x : 0.0f, 0.0f));
+    ImGui::ItemSize(total_bb, style.FramePadding.y);
+    if (!ImGui::ItemAdd(total_bb, id, &bb))
+        return false;
+
+    // Open on click
+    bool hovered, held;
+    bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
+    const ImGuiID popup_id = ImHashStr("##ComboPopup", 0, id);
+    bool popup_open = ImGui::IsPopupOpen(popup_id, ImGuiPopupFlags_None);
+    if (pressed && !popup_open)
+    {
+        ImGui::OpenPopupEx(popup_id, ImGuiPopupFlags_None);
+        popup_open = true;
+    }
+
+    drawButton(bb.Min, bb.GetSize(), hovered, held);
+
+    Image({ bb.Max.x - 24, bb.Min.y + 8}, *expandIcon.get(), {16,16}, {0,0}, {1,1}, { 255,255,255,(int)(255 * 0.7) }, true);
+
+    const float value_x2 = ImMax(bb.Min.x, bb.Max.x - arrow_size);
+    // Render preview and label
+    if (preview_value != NULL && !(flags & ImGuiComboFlags_NoPreview))
+    {
+        if (g.LogEnabled)
+            ImGui::LogSetNextTextDecoration("{", "}");
+        ImGui::RenderTextClipped(bb.Min + style.FramePadding + ImVec2{8,2}, ImVec2(value_x2, bb.Max.y), preview_value, NULL, NULL);
+    }
+    if (label_size.x > 0)
+        ImGui::RenderText(ImVec2(bb.Max.x + style.ItemInnerSpacing.x, bb.Min.y + style.FramePadding.y), label);
+
+    if (!popup_open)
+        return false;
+
+    
+
+    g.NextWindowData.Flags = backup_next_window_data_flags;
+    return ImGui::BeginComboPopup(popup_id, bb, flags);
+}
+
 bool VecGui::SliderScalar(std::string_view label, ImGuiDataType type, void* value, const void* min, const void* max)
 {
-    const static auto sliderTexture = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\scrollbars\\scrollbar_slider.dds");
-    const static auto backgroundTexture = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\backgrounds\\dark_area.dds");
+    const static auto sliderTexture = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\scrollbars\\scrollbar_slider.dds");
+    const static auto backgroundTexture = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\dark_area.dds");
+    const static auto bgGradienTexturePath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\backgrounds\\default_bg_shading.dds");
+
 
     if (backgroundTexture.get()->initialized)
     {
@@ -242,11 +247,17 @@ bool VecGui::SliderScalar(std::string_view label, ImGuiDataType type, void* valu
         if (value_changed)
             ImGui::MarkItemEdited(id);
 
+        grab_bb.Expand({ 0,-2 });
+
         // Render grab
         if (grab_bb.Max.x > grab_bb.Min.x)
         {
-            VecGui::Image(grab_bb.Min, *sliderTexture.get(), grab_bb.GetSize(), { 0,0 }, { 8.0f / 16.0f,1.0f }, IM_COL32_WHITE, true);
-
+            //VecGui::Image(grab_bb.Min, *sliderTexture.get(), grab_bb.GetSize(), { 0,0 }, { 0.4999f,1.0f }, IM_COL32_WHITE, true);
+            auto cursor = ImGui::GetCursorScreenPos();
+            ImGui::SetCursorScreenPos(grab_bb.Min);
+            VecGui::NineSliceImage(*sliderTexture.get(), grab_bb.GetSize(), { {4,5},{4,5} }, { 0,0 }, { 0.5f,1.0f }, IM_COL32_WHITE, 1.0f, true);
+            VecGui::NineSliceImage(*bgGradienTexturePath.get(),*sliderTexture.get(), grab_bb.GetSize(), {{4,5},{4,5}}, { 0,0 }, { 1.0f,1.0f } , { 0,0 }, { 0.5f,1.0f }, { 255,255,255,(int)(255 * 0.5) }, 1.0f, true,BlendMode::overlay);
+            ImGui::SetCursorScreenPos(cursor);
         }
 
         //window->DrawList->AddRectFilled(grab_bb.Min, grab_bb.Max, ImGui::GetColorU32(g.ActiveId == id ? ImGuiCol_SliderGrabActive : ImGuiCol_SliderGrab), style.GrabRounding);
@@ -269,6 +280,47 @@ bool VecGui::SliderScalar(std::string_view label, ImGuiDataType type, void* valu
         return ImGui::SliderScalar(label.data(), type, value, min, max, nullptr, 0);
     }
 
+
+}
+
+void VecGui::drawButton(ImVec2 pos, ImVec2 size,bool hovered, bool held, bool actionButton)
+{
+    const static auto mainTexturePath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\buttons\\default_button_bg.dds");
+    const static auto frameTexturePath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\buttons\\default_button_wood_border.dds");
+    const static auto detailTexturePath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\buttons\\default_button_texture.dds");
+    const static auto bgGradienTexturePath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\buttons\\default_button_bg_gradient.dds");
+    const static auto bevelTexturePath = ResourceHandler::GetTexture(Settings::gameDirectory.getSetting() / "game\\gfx\\interface\\buttons\\default_button_bevel.dds");
+    const static auto whiteTexture = ResourceHandler::GetTexture("gfx\\white.dds");
+
+    const static auto mousePress = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\buttons\\default_button_mousepress.dds");
+    const static auto mouseOver = ResourceHandler::GetTexture("C:\\Program Files (x86)\\Steam\\steamapps\\common\\Victoria 3\\game\\gfx\\interface\\buttons\\default_button_mouseover.dds");
+
+    ImVec2 uvMin = { 0,0 };
+    if (actionButton)
+    {
+        uvMin = { 38.0f / 114.0f,0 };
+    }
+    ImVec2 uvMax = { 38.0f / 114.0f + uvMin.x,1 };
+    auto cursor = ImGui::GetCursorScreenPos();
+    ImGui::SetCursorScreenPos(pos);
+    VecGui::NineSliceImage(*mainTexturePath.get(), size, { {19.0f,19.0f},{19.0f,19.0f} }, uvMin, uvMax, { 255,255,255,(int)(255 * 0.7) }, 2, true);
+    if (hovered && !held)
+    {
+        VecGui::NineSliceImage(*mouseOver.get(), *mainTexturePath.get(), size, { {19.0f,19.0f},{19.0f,19.0f} }, { 0,0 }, { 1,1 }, uvMin, uvMax, { 255,255,255,(int)(255 * 0.5) }, 2, true, BlendMode::color_dodge);
+    }
+    if (held)
+    {
+        VecGui::NineSliceImage(*mousePress.get(), *mainTexturePath.get(), size, { {19.0f,19.0f},{19.0f,19.0f} }, { 0,0 }, { 1,1 }, uvMin, uvMax, { 255,255,255,(int)(255 * 1) }, 2, true, BlendMode::overlay);
+    }
+    ImGui::SetCursorScreenPos(pos);
+    VecGui::NineSliceImage(*frameTexturePath.get(), *mainTexturePath.get(), size, { {19.0f,19.0f},{19.0f,19.0f} }, { 0,0 }, { 1, 1 }, uvMin, uvMax, { 255,255,255,(int)(255 * 0.7) }, 2, true, BlendMode::overlay);
+    VecGui::NineSliceImage(*bgGradienTexturePath.get(), *mainTexturePath.get(), size, { {19.0f,19.0f},{19.0f,19.0f} }, { 0,0 }, { 1, 1 }, uvMin, uvMax, { 255,255,255,(int)(255 * 0.5) }, 2, true, BlendMode::overlay);
+    VecGui::NineSliceImage(*detailTexturePath.get(), *mainTexturePath.get(), size, { {19.0f,19.0f},{19.0f,19.0f} }, { 0,0 }, { 1,1 }, uvMin, uvMax, { 255,255,255,(int)(255 * 0.7) }, 2, true, BlendMode::overlay);
+
+    ImGui::SetCursorScreenPos(pos + ImVec2{ 2,2 });
+    VecGui::NineSliceImage(*bevelTexturePath.get(), size - ImVec2{ 4,4 }, { {75.0f,35.0f},{75.0f,35.0f} }, { 0,0 }, { 1,1 }, { 255,255,255,(int)(255 * 0.7) }, 2);
+
+    ImGui::SetCursorScreenPos(cursor);
 
 }
 
@@ -419,7 +471,6 @@ void VecGui::Image(ImVec2 Pos, Texture& texture, ImVec2 size, ImVec2 uvMin, ImVe
     if (texture.initialized && whiteTexture.get()->initialized)
     {
         DrawImageAlphaMask(texture, *whiteTexture.get(), Pos, Pos + size, uvMin, uvMax, { 0,0 }, { 1,1 }, colorBlend);
-
     }
     else
     {

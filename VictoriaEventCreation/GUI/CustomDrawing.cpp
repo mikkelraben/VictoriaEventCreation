@@ -5,24 +5,7 @@
 #include "../Core/imgui/imgui_impl_vulkan.h"
 #include "../Core/ResourceHandler.h"
 #include "Widgets.h"
-
-static inline ImVec2 operator*(const ImVec2& lhs, const float rhs) { return ImVec2(lhs.x * rhs, lhs.y * rhs); }
-
-static inline ImVec2 operator+(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x + rhs.x, lhs.y + rhs.y); }
-static inline ImVec2 operator-(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x - rhs.x, lhs.y - rhs.y); }
-
-static inline ImVec2 operator*(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x * rhs.x, lhs.y * rhs.y); }
-static inline ImVec2 operator/(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x / rhs.x, lhs.y / rhs.y); }
-
-static inline bool operator==(const ImVec2& lhs, const ImVec2& rhs)
-{
-    ImVec2 size = lhs - rhs;
-    size.x = size.x * size.x;
-    size.y = size.y * size.y;
-    float length = sqrt(size.x + size.y);
-    return length < 0.001f;
-}
-
+#include "ImGuiHelper.h"
 
 void GetAxisPosition(const size_t& axis, float& axisValue, float startValue, const ImVec2& MiddleValues, float endValue, float scale)
 {
@@ -350,9 +333,9 @@ void VictoriaWindow::RenderWindowDecorations(ImGuiWindow* window, const ImRect& 
                 else if (flags & ImGuiWindowFlags_Tooltip)
                 {
                     DrawNineSliceImage(*TooltipPath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::normal);
-                    DrawNineSliceImage(*TooltipShadingPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::overlay);
-                    DrawNineSliceImage(*velvetOverlayPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { windowWidth / velvetOverlayPath.get()->width * 2.0f ,windowHeight / velvetOverlayPath.get()->height * 2.0f }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::overlay);
-                    DrawNineSliceImage(*ClothOverlayPath.get(), *backgroundTexturePath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { 1,1 }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.15f }, 2, BlendMode::overlay);
+                    DrawNineSliceImage(*TooltipShadingPath.get(), *TooltipPath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, {1,1}, {0,0}, {1,1}, IM_COL32_WHITE, 2, BlendMode::overlay);
+                    DrawNineSliceImage(*velvetOverlayPath.get(), *TooltipPath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { windowWidth / velvetOverlayPath.get()->width * 2.0f ,windowHeight / velvetOverlayPath.get()->height * 2.0f }, { 0,0 }, { 1,1 }, IM_COL32_WHITE, 2, BlendMode::overlay);
+                    DrawNineSliceImage(*ClothOverlayPath.get(), *TooltipPath.get(), window->Pos, window->Size, { 48,48,48,48 }, { 0,0 }, { windowWidth / ClothOverlayPath.get()->width ,windowHeight / ClothOverlayPath.get()->height }, { 0,0 }, { 1,1 }, ImColor{ 1.0f,1.0f,1.0f,0.15f }, 2, BlendMode::overlay);
                 }
                 else
                 {
@@ -546,6 +529,15 @@ void VictoriaWindow::RenderWindowTitleBarContents(ImGuiWindow* window, const ImR
         }
 
     }
+    if (flags & VictoriaEventWindow)
+    {
+        ImVec2 position = ImGui::GetCursorScreenPos();
+        close_button_pos = position + ImVec2{ 1125,1 };
+        VecGui::Image(close_button_pos - ImVec2{ 3,3 }, *background.get(), { 53,53 }, { 0,0 }, { 1,1 }, { 255,255,255,255 }, true);
+        ImGui::SetCursorScreenPos(close_button_pos);
+        VecGui::RoundButton({ "##MINIMIZE" }, "minimize", { 47,47 });
+        ImGui::SetCursorScreenPos(position);
+    }
 
     window->DC.NavLayerCurrent = ImGuiNavLayer_Main;
     g.CurrentItemFlags = item_flags_backup;
@@ -569,7 +561,7 @@ void VictoriaWindow::RenderWindowTitleBarContents(ImGuiWindow* window, const ImR
         pad_r = ImMax(pad_r, pad_extend * centerness);
     }
 
-    ImRect layout_r(title_bar_rect.Min.x + pad_l, title_bar_rect.Min.y, title_bar_rect.Max.x - pad_r, title_bar_rect.Max.y);
+    ImRect layout_r(title_bar_rect.Min.x + pad_l, title_bar_rect.Min.y+4, title_bar_rect.Max.x - pad_r, title_bar_rect.Max.y+4);
     ImRect clip_r(layout_r.Min.x, layout_r.Min.y, ImMin(layout_r.Max.x + g.Style.ItemInnerSpacing.x, title_bar_rect.Max.x), layout_r.Max.y);
     if (flags & ImGuiWindowFlags_UnsavedDocument)
     {
