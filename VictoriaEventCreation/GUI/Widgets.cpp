@@ -2,11 +2,13 @@
 #include "../Core/pch.h"
 #include "Widgets.h"
 #include "CustomDrawing.h"
-#include "../Core/imgui/imgui_internal.h"
+#include "imgui_internal.h"
 #include "../Core/ResourceHandler.h"
+#include "ImGui Node Editor/imgui_node_editor.h"
 #include "ImGuiHelper.h"
+namespace ed = ax::NodeEditor;
 
-bool VecGui::Button(std::string_view id, ImVec2 size)
+bool VecGui::Button(std::string_view id, bool actionButton, ImVec2 size)
 {
     ImVec2 cursor = ImGui::GetCursorScreenPos();
     auto& style = ImGui::GetStyle();
@@ -18,13 +20,17 @@ bool VecGui::Button(std::string_view id, ImVec2 size)
     ImVec2 imSize;
     const ImGuiID imId = window->GetID(id.data());
     const ImVec2 label_size = ImGui::CalcTextSize(id.data(), NULL, true);
-    if (size.x < 0 || size.y < 0)
+    if (size.x < 0 && size.y < 0)
     {
         imSize = ImGui::CalcItemSize(label_size, 16.0f, 16.0f);
         imSize = imSize + ImVec2{ 32, 32 };
     }
     else
     {
+        if (size.x < 0)
+        {
+            size.x = ImGui::CalcItemSize(label_size, 16.0f, 16.0f).x + 16;
+        }
         imSize = size;
     }
 
@@ -51,7 +57,7 @@ bool VecGui::Button(std::string_view id, ImVec2 size)
     ImVec2 position = ImGui::GetCursorScreenPos();
     ImGui::SetCursorScreenPos(cursor);
 
-    drawButton(cursor,imSize,hovered,held);
+    drawButton(cursor,imSize,hovered,held,actionButton);
 
     ImGui::RenderTextClipped(bb.Min + style.FramePadding, bb.Max - style.FramePadding, id.data(), NULL, &label_size, style.ButtonTextAlign, &bb);
     ImGui::SetCursorScreenPos(position);
@@ -72,19 +78,34 @@ bool VecGui::CheckBox(std::string_view id, bool& value)
 
 
         ImVec2 cursor = ImGui::GetCursorScreenPos();
-        VecGui::Image(*mainTexturePath.get(), size, { value ? 0.5f : 0.0f,0.0f }, { value ? 1.0f : 0.5f,1.0f });
+        VecGui::Image(*mainTexturePath.get(), size, { value ? 0.5f : 0.0f,0.0f }, { value ? 1.0f : 0.5f,1.0f }, IM_COL32_WHITE,true);
 
 
         const ImGuiID imId = window->GetID(id.data());
-
+        if (id == "@@node")
+        {
+            id = value ? "yes" : "no";
+        }
+        const ImVec2 labelSize = ImGui::CalcTextSize(id.data(), NULL, true);
+        const ImVec2 labelOffset = { 4,0 };
 
         const ImRect bb(cursor, cursor + size);
-        //ImGui::ItemSize(size);
-        if (!ImGui::ItemAdd(bb, imId))
+        const ImRect total(cursor, cursor + size + ImVec2(labelSize.x,0) + labelOffset);
+
+        ImGui::ItemSize(total);
+        if (!ImGui::ItemAdd(total, imId))
             return false;
 
         bool hovered, held;
-        bool pressed = ImGui::ButtonBehavior(bb, imId, &hovered, &held, 0);
+        bool pressed = ImGui::ButtonBehavior(total, imId, &hovered, &held, 0);
+
+        ImVec2 labelPos = { bb.Max.x + labelOffset.x,bb.Min.y };
+
+        if (labelSize.x > 0)
+        {
+            ImGui::RenderText(labelPos, id.data());
+        }
+
 
         if (pressed)
         {
@@ -118,6 +139,7 @@ bool VecGui::BeginCombo(const char* label, const char* preview_value, ImGuiCombo
 
     ImGuiNextWindowDataFlags backup_next_window_data_flags = g.NextWindowData.Flags;
     g.NextWindowData.ClearFlags(); // We behave like Begin() and need to consume those values
+    bool insideNode = ed::GetCurrentEditor();
     if (window->SkipItems)
         return false;
 
@@ -128,7 +150,7 @@ bool VecGui::BeginCombo(const char* label, const char* preview_value, ImGuiCombo
     const float arrow_size = (flags & ImGuiComboFlags_NoArrowButton) ? 0.0f : ImGui::GetFrameHeight();
     const ImVec2 label_size = ImGui::CalcTextSize(label, NULL, true);
     const float w = (flags & ImGuiComboFlags_NoPreview) ? arrow_size : ImGui::CalcItemWidth();
-    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + ImVec2(w, label_size.y + 6.0f + style.FramePadding.y * 2.0f));
+    ImRect bb(window->DC.CursorPos, window->DC.CursorPos + ImVec2(w, label_size.y + 6.0f + style.FramePadding.y * 2.0f));
     const ImRect total_bb(bb.Min, bb.Max + ImVec2(label_size.x > 0.0f ? style.ItemInnerSpacing.x + label_size.x : 0.0f, 0.0f));
     ImGui::ItemSize(total_bb, style.FramePadding.y);
     if (!ImGui::ItemAdd(total_bb, id, &bb))
@@ -141,13 +163,20 @@ bool VecGui::BeginCombo(const char* label, const char* preview_value, ImGuiCombo
     bool popup_open = ImGui::IsPopupOpen(popup_id, ImGuiPopupFlags_None);
     if (pressed && !popup_open)
     {
+        if (insideNode)
+        {
+            ed::Suspend();
+        }
         ImGui::OpenPopupEx(popup_id, ImGuiPopupFlags_None);
         popup_open = true;
+
+        if (insideNode)
+        {
+            ed::Resume();
+        }
     }
 
     drawButton(bb.Min, bb.GetSize(), hovered, held);
-
-    Image({ bb.Max.x - 24, bb.Min.y + 8}, *expandIcon.get(), {16,16}, {0,0}, {1,1}, { 255,255,255,(int)(255 * 0.7) }, true);
 
     const float value_x2 = ImMax(bb.Min.x, bb.Max.x - arrow_size);
     // Render preview and label
@@ -160,13 +189,37 @@ bool VecGui::BeginCombo(const char* label, const char* preview_value, ImGuiCombo
     if (label_size.x > 0)
         ImGui::RenderText(ImVec2(bb.Max.x + style.ItemInnerSpacing.x, bb.Min.y + style.FramePadding.y), label);
 
-    if (!popup_open)
-        return false;
 
+    Image({ bb.Max.x - 24, bb.Min.y + 8}, *expandIcon.get(), { 16,16 }, {0,0}, {1,1}, { 255,255,255,(int)(255 * 0.7) }, true);
     
+    if (!popup_open)
+    {
+        return false;
+    }
+
+    if (insideNode)
+    {
+        ed::Suspend();
+        bb.Min = ed::CanvasToScreen(bb.Min);
+        bb.Max = ed::CanvasToScreen(bb.Max);
+    }
 
     g.NextWindowData.Flags = backup_next_window_data_flags;
-    return ImGui::BeginComboPopup(popup_id, bb, flags);
+    auto returnValue = ImGui::BeginComboPopup(popup_id, bb, flags);
+    return returnValue;
+}
+
+bool VecGui::BeginPopup(const char* str_id, ImGuiWindowFlags flags)
+{
+        ImGuiContext& g = *GImGui;
+        if (g.OpenPopupStack.Size <= g.BeginPopupStack.Size) // Early out for performance
+        {
+            g.NextWindowData.ClearFlags(); // We behave like Begin() and need to consume those values
+            return false;
+        }
+        flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings;
+        ImGuiID id = g.CurrentWindow->GetID(str_id);
+        return ImGui::BeginPopupEx(id, flags);
 }
 
 bool VecGui::SliderScalar(std::string_view label, ImGuiDataType type, void* value, const void* min, const void* max)
@@ -455,14 +508,22 @@ void VecGui::Image(ImVec2 Pos, Texture& texture, ImVec2 size, ImVec2 uvMin, ImVe
     auto draw_list = ImGui::GetWindowDrawList();
     const static auto whiteTexture = ResourceHandler::GetTexture("gfx\\white.dds");
 
-
-    if (!floating)
+    ImVec2 floatingPos;
+    if (floating)
     {
-        ImRect bb(Pos, Pos + size);
-        ImGui::ItemSize(bb);
-        if (!ImGui::ItemAdd(bb, 0))
-            return;
+        floatingPos = ImGui::GetCursorScreenPos();
     }
+
+    ImRect bb(Pos, Pos + size);
+    ImGui::ItemSize(bb);
+    if (!ImGui::ItemAdd(bb, 0))
+        return;
+
+    if (floating)
+    {
+        ImGui::SetCursorScreenPos(floatingPos);
+    }
+
 
 
     //uncomment to add bounding box around a texture

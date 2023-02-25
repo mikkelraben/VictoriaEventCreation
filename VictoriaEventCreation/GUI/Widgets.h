@@ -23,12 +23,13 @@ namespace VecGui
     };
 
 
-    bool Button(std::string_view id, ImVec2 size = {-1,-1});
+    bool Button(std::string_view id, bool actionButton = false, ImVec2 size = {-1,-1});
     bool RoundButton(Id id, std::string_view icon, const ImVec2& size, const ImVec2& uvMin = {0,0}, const ImVec2& uvMax = {1,1}, bool isCloseTab = false);
     bool CheckBox(std::string_view id, bool& value);
     bool SliderInt(std::string_view id, int& value, int min, int max);
     bool SliderFloat(std::string_view id, float& value, float min, float max);
     bool BeginCombo(const char* label, const char* preview_value, ImGuiComboFlags flags);
+    bool BeginPopup(const char* str_id, ImGuiWindowFlags flags = ImGuiWindowFlags_None);
 
     bool SliderScalar(std::string_view label, ImGuiDataType type, void* value, const void* min, const void* max);
     void drawButton(ImVec2 pos, ImVec2 size, bool hovered, bool held, bool actionButton = false);

@@ -2,6 +2,7 @@
 #include "../Core/Application.h"
 #include "../Sound/BankLoad.h"
 #include "../Scripting Objects/Event.h"
+#include "ImGui Node Editor/imgui_node_editor.h"
 
 class EventTool : public BaseApp::Window
 {
@@ -10,11 +11,18 @@ public:
     {
         name = "Event Tool";
         isWindowOpen = true;
+        windowFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
     }
     void Run() override;
+    void createLink(ax::NodeEditor::PinId& inputPinId, ax::NodeEditor::PinId& outputPinId);
+    void findPin(ax::NodeEditor::PinId& inputPinId, Pin*& input, Trigger*& inputNode);
     void Properties() override;
+    void Opened() override;
+    void Exit() override;
 private:
     Event object;
+    ax::NodeEditor::EditorContext* editor_Context = nullptr;
+    ed::NodeId contextNodeId = 0;
 };
 
 class Console : public BaseApp::Window

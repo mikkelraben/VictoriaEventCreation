@@ -479,7 +479,7 @@ void Graphics::RenderFrame()
         {
             swapchainRebuild = true;
         }
-        //else
+        else
         {
             vkWaitForFences(device, 1, &frame->Fence, VK_TRUE, 10000);
 

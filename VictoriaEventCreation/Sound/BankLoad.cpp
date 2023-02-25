@@ -22,7 +22,7 @@ namespace Sound
         functionLoader.loadFunctions();
 
         
-        RE_ASSERT_ZERO(FMOD::Studio::System::Create(&system, 0x00020100));
+        RE_ASSERT_ZERO(FMOD::Studio::System::Create(&system, 0x00020200));
         
         
         RE_ASSERT_ZERO(system->getCoreSystem(system, &coreSystem));

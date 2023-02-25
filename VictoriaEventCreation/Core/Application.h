@@ -68,7 +68,7 @@ namespace BaseApp {
         virtual void Exit() {};
 
         //called when there are unsaved changes and trying to close the window
-        virtual void UnsavedChangesBlocking() {};
+        virtual void UnsavedChangesBlocking();
 
         bool unsavedChanges = false;
         bool windowHasOpened = false;

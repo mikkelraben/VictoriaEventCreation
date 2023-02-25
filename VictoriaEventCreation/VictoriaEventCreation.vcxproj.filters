@@ -102,6 +102,21 @@
     <ClCompile Include="Core\Node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Scripting Objects\Trigger.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\imgui\ImGui Node Editor\crude_json.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\imgui\ImGui Node Editor\imgui_canvas.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\imgui\ImGui Node Editor\imgui_node_editor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\imgui\ImGui Node Editor\imgui_node_editor_api.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Application.h">
@@ -192,6 +207,36 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GUI\ImGuiHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Scripting Objects\Trigger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\imgui\ImGui Node Editor\crude_json.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\imgui\ImGui Node Editor\imgui_bezier_math.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\imgui\ImGui Node Editor\imgui_canvas.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\imgui\ImGui Node Editor\imgui_extra_math.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\imgui\ImGui Node Editor\imgui_node_editor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\imgui\ImGui Node Editor\imgui_node_editor_internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\imgui\ImGui Node Editor\imgui_extra_math.inl">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\imgui\ImGui Node Editor\imgui_bezier_math.inl">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\imgui\ImGui Node Editor\imgui_node_editor_internal.inl">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

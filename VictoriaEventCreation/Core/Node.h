@@ -12,16 +12,9 @@ struct BasicNode
     static BasicNode* findChildFromName(std::vector<BasicNode*>& children, std::string_view name);
 };
 
-struct Node : public BasicNode
-{
-    Node(std::string_view _name, std::string_view _formalName) : formalName(_formalName) { };
-    int possibleScope = 0;
-    std::string formalName;
-    std::vector<BasicNode*> children;
-    void EditableField() override;
-    YAML::Node Serialize() override;
-    void Deserialize(const YAML::Node& node) override;
-};
+//fill out to use in Serialize
+template<typename T>
+std::string typeName();
 
 template<typename T>
 struct Param : public BasicNode

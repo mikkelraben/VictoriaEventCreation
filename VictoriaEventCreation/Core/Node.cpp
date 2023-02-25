@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Node.h"
 #include "../Sound/BankLoad.h"
+#include "../Scripting Objects/Trigger.h"
 
 BasicNode* BasicNode::findChildFromName(std::vector<BasicNode*>& children, std::string_view name)
 {
@@ -14,70 +15,69 @@ BasicNode* BasicNode::findChildFromName(std::vector<BasicNode*>& children, std::
     return nullptr;
 }
 
-void Node::EditableField()
-{
-    ImGui::Text("Hello There");
-}
-
-YAML::Node Node::Serialize()
-{
-    YAML::Node node;
-    node["type"] = "node";
-    node["name"] = name;
-    node["possibleScope"] = possibleScope;
-    node["formalName"] = formalName;
-    YAML::Node childrenNode;
-    for (auto& child : children)
-    {
-        childrenNode.push_back(child->Serialize());
-    }
-    node["children"] = childrenNode;
-
-    return node;
-}
-
-void Node::Deserialize(const YAML::Node& node)
-{
-    RE_ASSERT(node["type"].as<std::string>() == "node");
-
-    name = node["name"].as<std::string>();
-    int newScope = 0;
-
-    formalName = node["formalName"].as<std::string>();
-    YAML::Node childrenNode = node["children"];
-    for (auto child : childrenNode)
-    {
-        BasicNode* newChild;
-        if (child["type"].as<std::string>() == "node")
-        {
-            newChild = new Node("", "");
-        }
-        else if (child["type"].as<std::string>() == "param")
-        {
-            if (child["variableType"].as<std::string>() == "int")
-            {
-                newChild = new Param<int>(0, "");
-            }
-            else
-            {
-                RE_LogError("Could not deduce variable type");
-                return;
-            }
-        }
-        else
-        {
-            RE_LogError("Child node not node or param");
-            return;
-        }
-        newChild->Deserialize(child);
-        children.push_back(newChild);
-    }
-}
+//void Node::EditableField()
+//{
+//    ImGui::Text("Hello There");
+//}
+//
+//YAML::Node Node::Serialize()
+//{
+//    YAML::Node node;
+//    node["type"] = "node";
+//    node["name"] = name;
+//    node["possibleScope"] = possibleScope;
+//    node["formalName"] = formalName;
+//    YAML::Node childrenNode;
+//    for (auto& child : children)
+//    {
+//        childrenNode.push_back(child->Serialize());
+//    }
+//    node["children"] = childrenNode;
+//
+//    return node;
+//}
+//
+//void Node::Deserialize(const YAML::Node& node)
+//{
+//    RE_ASSERT(node["type"].as<std::string>() == "node");
+//
+//    name = node["name"].as<std::string>();
+//    int newScope = 0;
+//
+//    formalName = node["formalName"].as<std::string>();
+//    YAML::Node childrenNode = node["children"];
+//    for (auto child : childrenNode)
+//    {
+//        BasicNode* newChild;
+//        if (child["type"].as<std::string>() == "node")
+//        {
+//            newChild = new Node("", "");
+//        }
+//        else if (child["type"].as<std::string>() == "param")
+//        {
+//            if (child["variableType"].as<std::string>() == "int")
+//            {
+//                newChild = new Param<int>(0, "");
+//            }
+//            else
+//            {
+//                RE_LogError("Could not deduce variable type");
+//                return;
+//            }
+//        }
+//        else
+//        {
+//            RE_LogError("Child node not node or param");
+//            return;
+//        }
+//        newChild->Deserialize(child);
+//        children.push_back(newChild);
+//    }
+//}
 
 template<>
 void Param<int>::EditableField()
 {
-    ImGui::Text(name.c_str());
     ImGui::SameLine();
     ImGui::PushItemWidth(-4);
     ImGui::PushID(&name);
@@ -98,11 +98,58 @@ YAML::Node Param<int>::Serialize()
     return node;
 }
 
+
+template<>
+void Param<float>::EditableField()
+{
+    ImGui::SameLine();
+    ImGui::PushItemWidth(-4);
+    ImGui::PushID(&name);
+    ImGui::InputFloat(("##" + name).c_str(), &variable);
+    ImGui::PopID();
+    ImGui::PopItemWidth();
+}
+
+template<>
+YAML::Node Param<float>::Serialize()
+{
+    YAML::Node node;
+    node["type"] = "param";
+    node["name"] = name;
+    node["variable"] = variable;
+    node["variableType"] = "float";
+
+    return node;
+}
+
+
+template<>
+void Param<bool>::EditableField()
+{
+    ImGui::SameLine();
+    ImGui::PushItemWidth(-4);
+    ImGui::PushID(&name);
+    VecGui::CheckBox(name, variable);
+    ImGui::PopID();
+    ImGui::PopItemWidth();
+}
+
+template<>
+YAML::Node Param<bool>::Serialize()
+{
+    YAML::Node node;
+    node["type"] = "param";
+    node["name"] = name;
+    node["variable"] = variable;
+    node["variableType"] = "bool";
+
+    return node;
+}
+
+
 template<>
 void Param<std::string>::EditableField()
 {
-    ImGui::Text(name.c_str());
-    ImGui::SameLine();
     ImGui::PushItemWidth(-4);
     ImGui::PushID(&name);
     ImGui::InputText(("##" + name).c_str(), &variable);
@@ -122,9 +169,9 @@ YAML::Node Param<std::string>::Serialize()
     return node;
 }
 
+
 void Param<Sound::Event>::EditableField()
 {
-    ImGui::Text(name.c_str());
     ImGui::PushID(&name);
     if (VecGui::CheckBox("UI", ui))
     {
@@ -134,8 +181,6 @@ void Param<Sound::Event>::EditableField()
         }
     }
     ImGui::SameLine();
-    ImGui::Text("UI");
-    ImGui::SameLine();
 
     if (VecGui::CheckBox("Event", event))
     {
@@ -144,9 +189,6 @@ void Param<Sound::Event>::EditableField()
             ui = !ui;
         }
     }
-
-    ImGui::SameLine();
-    ImGui::Text("Event");
 
     std::string filter = "";
     if (ui)
@@ -160,6 +202,7 @@ void Param<Sound::Event>::EditableField()
     }
 
     ImGui::PushItemWidth(-4);
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, { 0,0 });
     if (VecGui::BeginCombo("##Sounds", preview.c_str(), 0))
     {
         for (size_t i = 0; i < soundSystem.events.size(); i++)
@@ -167,10 +210,12 @@ void Param<Sound::Event>::EditableField()
             if (soundSystem.events[i].name.starts_with(filter))
             {
                 bool isSelected = selected == i;
-                if (ImGui::Selectable(soundSystem.events[i].name.c_str()))
+                if (VecGui::Button(soundSystem.events[i].name.c_str(), true, { -1,32 }))
                 {
+                    soundSystem.events[selected].Stop();
                     preview = soundSystem.events[i].name;
                     selected = i;
+                    ImGui::CloseCurrentPopup();
                 }
 
                 if (isSelected)
@@ -181,6 +226,7 @@ void Param<Sound::Event>::EditableField()
         }
         ImGui::EndCombo();
     }
+    ImGui::PopStyleVar();
     if (!soundSystem.events.empty())
     {
         if (VecGui::Button("Play"))
@@ -223,4 +269,79 @@ void Param<Sound::Event>::FindSelection()
             }
         }
     }
+}
+
+
+void Param<ScriptingEnum>::EditableField()
+{
+    ImGui::PushID(&name);
+    ImGui::PushItemWidth(200);
+    std::string preview;
+    if (variable.selected < variable.options.size())
+    {
+        preview = variable.options[variable.selected];
+    }
+    else
+    {
+        preview = variable.options[0];
+    }
+
+    bool insideNode = ed::GetCurrentEditor();
+    
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, { 0,0 });
+
+    if (VecGui::BeginCombo("##Enums", preview.c_str(), 0))
+    {
+        for (size_t i = 0; i < variable.options.size(); i++)
+        {
+            bool isSelected = variable.selected == i;
+            if (VecGui::Button(variable.options[i].c_str(),true,{-1,32}))
+            {
+                variable.selected = i;
+                ImGui::CloseCurrentPopup();
+            }
+
+            if (isSelected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+        if (insideNode)
+        {
+            ed::Resume();
+        }
+    }
+    ImGui::PopStyleVar();
+
+
+    ImGui::PopID();
+    ImGui::PopItemWidth();
+}
+
+YAML::Node Param<ScriptingEnum>::Serialize()
+{
+    YAML::Node node;
+    node["type"] = "param";
+    node["name"] = name;
+    node["variable"] = variable;
+    node["variableType"] = "Enum";
+
+    return node;
+}
+
+void Param<Pin>::EditableField()
+{
+    variable.DrawPin();
+}
+
+YAML::Node Param<Pin>::Serialize()
+{
+    YAML::Node node;
+    node["type"] = "param";
+    node["name"] = name;
+    node["variable"] = variable;
+    node["variableType"] = "pin";
+
+    return node;
 }

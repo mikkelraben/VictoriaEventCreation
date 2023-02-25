@@ -1,0 +1,7 @@
+# TODO: Needs subtypes
+types = {
+    type[game_rule] = {
+        path = "game/common/game_rules"
+        skip_root_key = any
+    }
+}

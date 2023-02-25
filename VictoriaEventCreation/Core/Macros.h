@@ -6,7 +6,7 @@
 #define RE_LogError(message) Log::LogMessage("Error: ",message)
 
 #ifdef _DEBUG
-    #define Break() __debugbreak()
+    #define Break() Log::SaveLogs(); __debugbreak()
 #else
     #define Break()
 #endif
@@ -14,7 +14,7 @@
 #define AssertFunction(result, file, line, value)                                                   \
 if (result != value)                                                                                    \
 {                                                                                                   \
-    RE_LogError("Assert failed at File: " + std::string(file) + "Line: " + std::to_string(line));   \
+    RE_LogError("Assert failed at File: " + std::string(file) + " Line: " + std::to_string(line) + " Expected: " + std::to_string(value) + " Got: " + std::to_string(result));   \
     Break();                                                                                        \
 }                                                                                                   \
 

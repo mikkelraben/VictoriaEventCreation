@@ -106,7 +106,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>..\includes\;$(VULKAN_SDK)\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\includes\;$(VULKAN_SDK)\Include;Core\imgui\;Core\;</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
@@ -122,11 +122,11 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>YAML_CPP_STATIC_DEFINE;GLFW_INCLUDE_VULKAN;WIN32_LEAN_AND_MEAN;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>YAML_CPP_STATIC_DEFINE;GLFW_INCLUDE_VULKAN;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>..\includes\;$(VULKAN_SDK)\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\includes\;$(VULKAN_SDK)\Include;Core\imgui\;Core\;</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
@@ -142,6 +142,22 @@
     <ClCompile Include="Core\Application.cpp" />
     <ClCompile Include="Core\FilesysHelper.cpp" />
     <ClCompile Include="Core\Graphics.cpp" />
+    <ClCompile Include="Core\imgui\ImGui Node Editor\crude_json.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Core\imgui\ImGui Node Editor\imgui_canvas.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Core\imgui\ImGui Node Editor\imgui_node_editor.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Core\imgui\ImGui Node Editor\imgui_node_editor_api.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="Core\imgui\imgui.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -234,9 +250,16 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="GUI\Widgets.cpp" />
+    <ClCompile Include="Scripting Objects\Trigger.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Application.h" />
+    <ClInclude Include="Core\imgui\ImGui Node Editor\crude_json.h" />
+    <ClInclude Include="Core\imgui\ImGui Node Editor\imgui_bezier_math.h" />
+    <ClInclude Include="Core\imgui\ImGui Node Editor\imgui_canvas.h" />
+    <ClInclude Include="Core\imgui\ImGui Node Editor\imgui_extra_math.h" />
+    <ClInclude Include="Core\imgui\ImGui Node Editor\imgui_node_editor.h" />
+    <ClInclude Include="Core\imgui\ImGui Node Editor\imgui_node_editor_internal.h" />
     <ClInclude Include="Core\Macros.h" />
     <ClInclude Include="Core\Node.h" />
     <ClInclude Include="GUI\ImGuiHelper.h" />
@@ -266,11 +289,21 @@
     <ClInclude Include="Core\vk-bootstrap\VkBootstrap.h" />
     <ClInclude Include="Core\vk-bootstrap\VkBootstrapDispatch.h" />
     <ClInclude Include="GUI\Widgets.h" />
+    <ClInclude Include="Scripting Objects\Trigger.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Core\imgui\LICENSE.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Core\imgui\ImGui Node Editor\imgui_bezier_math.inl">
+      <FileType>Document</FileType>
+    </ClInclude>
+    <ClInclude Include="Core\imgui\ImGui Node Editor\imgui_extra_math.inl">
+      <FileType>Document</FileType>
+    </ClInclude>
+    <ClInclude Include="Core\imgui\ImGui Node Editor\imgui_node_editor_internal.inl">
+      <FileType>Document</FileType>
+    </ClInclude>
     <None Include="Core\shaders\frag.spv" />
     <None Include="Core\shaders\fragment_shader.frag" />
     <None Include="Core\shaders\vert.spv" />

@@ -5309,6 +5309,7 @@ void ImGui::PopClipRect()
     ImGuiWindow* window = GetCurrentWindow();
     window->DrawList->PopClipRect();
     window->ClipRect = window->DrawList->_ClipRectStack.back();
+
 }
 
 static ImGuiWindow* FindFrontMostVisibleChildWindow(ImGuiWindow* window)
@@ -6141,11 +6142,19 @@ static ImVec2 CalcWindowAutoFitSize(ImGuiWindow* window, const ImVec2& size_cont
         size_desired += ImVec2(0, 0);
     }
 
+    if (window->Flags & ImGuiWindowFlags_Modal)
+    {
+        // Tooltip always resize
+        size_desired += ImVec2{ 0,28 };
+    }
+
     if (window->Flags & ImGuiWindowFlags_Tooltip)
     {
         // Tooltip always resize
-        return size_desired + ImVec2{0,40};
+        return size_desired + ImVec2{0,0};
     }
+
+
 
 
     else
@@ -7302,6 +7311,12 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
 
 
         if (flags & (ImGuiWindowFlags_Popup))
+        {
+            margins = { 0,12,0,10 };
+            window->WindowPadding = { 12,0 };
+        }
+
+        if (flags & (ImGuiWindowFlags_Modal))
         {
             margins = { 0,12,0,10 };
             window->WindowPadding = { 12,0 };

@@ -476,11 +476,6 @@ void VictoriaWindow::RenderWindowTitleBarContents(ImGuiWindow* window, const ImR
     g.CurrentItemFlags |= ImGuiItemFlags_NoNavDefaultFocus;
     window->DC.NavLayerCurrent = ImGuiNavLayer_Menu;
 
-
-
-
-
-
     ImFont* headerFont = ImGui::GetIO().Fonts->Fonts[2];
     ImGui::PushFont(headerFont);
 

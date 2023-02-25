@@ -1,0 +1,157 @@
+enums = {
+    enum[duration] = {
+        days
+        months
+        years
+    }
+
+    enum[character_role] = {
+        politician
+        general
+        admiral
+    }
+
+    enum[character_trait_type] = {
+        skill
+        personality
+        condition
+    }
+
+    enum[state_type] = {
+        unincorporated
+        treaty_port
+        incorporated
+    }
+
+    enum[country_type] = {
+        unrecognized
+        recognized
+        colonial
+        decentralized
+    }
+
+    enum[wage_level] ={
+        very_low
+        low
+        medium
+        high
+        very_high
+    }
+
+    enum[ig_approval] ={
+        angry
+        happy
+        unhappy
+        loyal
+    }
+
+    enum[pop_strata] = {
+        poor
+        middle
+        rich
+    }
+
+    enum[infamy_threshold] = {
+        notorious
+        infamous
+        pariah
+    }
+
+    enum[civil_war_type] = {
+        revolution
+        secession
+    }
+
+    enum[cosmetic_dlc] = {
+        "Victoria 2 Remastered Soundtrack"
+    }
+
+    enum[gameplay_dlc] = {
+        "American Buildings Pack"
+    }
+
+    enum[country_tier] = {
+        empire
+        hegemony
+        principality
+        city_state
+        grand_principality
+        kingdom
+    }
+
+    enum[diplo_play_attitute] = {
+        disinterested
+        cautious
+        conciliatory
+        cooperative
+        genial
+        wary
+        belligerent
+        antagonistic
+        loyal
+        rebellious
+        protective
+        domineering
+    }
+
+    enum[political_movement_type] = {
+        movement_to_enact
+        movement_to_preserve
+    }
+    enum[relations_thresholds] = {
+        friendly
+        amicable
+        cordial
+        poor
+        cold
+        hostile
+        neutral
+    }
+
+    enum[war_goal] = {
+        war_reparations
+        humiliation
+        open_market
+        regime_change
+        ban_slavery
+        unification_leadership
+        annex_country
+        liberate_country
+        make_puppet
+        make_dominion
+        make_vassal
+        conquer_state
+        return_state
+        take_treaty_port
+        revoke_all_claims
+        revoke_claim
+        contain_threat
+        transfer_subject
+        liberate_subject
+        force_recognition
+        independence
+        secession
+        unification
+    }
+
+    enum[secret_goal] = {
+        conquer
+        protect
+        dominate
+        none
+        befriend
+        antagonize
+    }
+    enum[law_stance_values] = {
+        strongly_disapprove
+        disapprove
+        neutral
+        approve
+        strongly_approve
+    }
+
+    enum[severity] = {
+        fail
+        invalid
+    }
+}

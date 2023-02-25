@@ -1,0 +1,9 @@
+types = {
+    type[ai_strategy] = {
+        path = "game/common/ai_strategies"
+    }
+}
+
+ai_strategy = {
+    scalar = single_alias_right[effect_clause]
+}

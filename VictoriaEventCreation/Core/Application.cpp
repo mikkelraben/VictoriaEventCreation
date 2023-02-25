@@ -6,6 +6,7 @@
 #include "../GUI/Windows.h"
 #include <GLFW/glfw3.h>
 #include "../Sound/BankLoad.h"
+#include "../Scripting Objects/Trigger.h"
 
 namespace BaseApp {
     static void glfw_error_callback(int error, const char* description)
@@ -27,12 +28,16 @@ namespace BaseApp {
     {
         Settings::LoadSettings();
         Sound::SoundSystem::InitSoundSystem();
+        Scripting::InitScripting();
         InitWindow();
-        Window* eventThingy = new EventTool(windows);
-        windows.push_back(eventThingy);
 
         Window* console = new Console(windows);
         windows.push_back(console);
+
+        Window* eventThingy = new EventTool(windows);
+        windows.push_back(eventThingy);
+
+
 
         SettingsEditor* settings = new SettingsEditor(windows);
         windows.push_back(settings);
@@ -160,7 +165,7 @@ namespace BaseApp {
         }
         else
         {
-            windowFlags &= !ImGuiWindowFlags_UnsavedDocument;
+            windowFlags &= ~ImGuiWindowFlags_UnsavedDocument;
         }
 
         ImGui::Begin(name.c_str(), closeWindow, windowFlags);
@@ -197,9 +202,32 @@ namespace BaseApp {
     {
         ImGui::Text("No Properties");
     }
+
     int Window::getId()
     {
         return windowID;
+    }
+
+    void Window::UnsavedChangesBlocking()
+    {
+        ImGui::OpenPopup("Save Settings?");
+        ImGui::SetNextWindowSizeConstraints({ 32,128 }, { -1,-1 });
+        if (ImGui::BeginPopupModal("Save Settings?", 0, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar))
+        {
+            ImGui::Text("Some Settings Are Not Saved, \nDo You Want To Continue Or Go Back");
+            ImGui::Separator();
+            if (ImGui::Button("Go Back", { 120,0 }))
+            {
+                isWindowOpen = true;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Continue", { 120,0 }))
+            {
+                unsavedChanges = false;
+            }
+            ImGui::EndPopup();
+        }
     }
 }
 
