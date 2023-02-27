@@ -1,9 +1,11 @@
 #include "pch.h"
 #include "Trigger.h"
+#include <execution>
 
-std::vector<Trigger> Scripting::triggers = {};
+std::vector<PossibleTrigger> Scripting::triggers = {};
 std::vector<scope> Scripting::scopes = {};
 std::vector<ScriptingEnum> Scripting::enums = {};
+std::vector<ScriptingType> Scripting::types = {};
 std::vector<scope> Scripting::utilizedScopes = {};
 
 
@@ -28,7 +30,7 @@ Trigger* Scripting::selectTrigger()
             {
                 for (auto& scriptingTrigger : triggers)
                 {
-                    if (scriptingTrigger.scopes & scope.key)
+                    if (scriptingTrigger.scopes & scope.key && !scriptingTrigger.interfaceTrigger)
                     {
 
                         if (VecGui::Button(scriptingTrigger.name, true,{ -1,32 }))
@@ -47,7 +49,7 @@ Trigger* Scripting::selectTrigger()
     {
         for (auto& scriptingTrigger : triggers)
         {
-            if (scriptingTrigger.name.find(filter) != std::string::npos)
+            if (scriptingTrigger.name.find(filter) != std::string::npos && !scriptingTrigger.interfaceTrigger)
             {
                 if (VecGui::Button(scriptingTrigger.name, true,{ -1,32 }))
                 {
@@ -72,7 +74,7 @@ void Scripting::catalogueAllTriggers()
     {
         file.seekg(48);
 
-        Trigger trigger;
+        PossibleTrigger trigger;
         TriggersState state = TriggersState::none;
 
         while (file.good())
@@ -84,7 +86,7 @@ void Scripting::catalogueAllTriggers()
                 if (state == TriggersState::read)
                 {
                     Scripting::triggers.push_back(trigger);
-                    trigger = Trigger{};
+                    trigger = PossibleTrigger{};
                 }
                 continue;
             }
@@ -164,7 +166,7 @@ void Scripting::catalogueAllTriggers()
     if (file.is_open())
     {
         TriggersState state = TriggersState::none;
-        Trigger* trigger = nullptr;
+        PossibleTrigger* trigger = nullptr;
         while (file.good())
         {
             std::string line;
@@ -211,7 +213,7 @@ void Scripting::catalogueAllTriggers()
                 {
                     auto type = line.substr(Length+1);
 
-                    addParam(type,trigger->parametersType);
+                    trigger->paramInputs.push_back(type);
                 }
 
                 continue;
@@ -227,7 +229,7 @@ void Scripting::catalogueAllTriggers()
             {
                 if (trigger)
                 {
-                    addParam(line, trigger->parametersType);
+                    trigger->paramInputs.push_back(line);
                 }
                 continue;
 
@@ -258,7 +260,7 @@ void Scripting::catalogueAllTriggers()
     //find any empty triggers
     for (auto& trigger : triggers)
     {
-        if (trigger.parametersType.empty())
+        if (trigger.paramInputs.empty())
         {
             RE_LogWarning("This trigger has no parameters: " + trigger.name);
         }
@@ -330,6 +332,118 @@ void Scripting::catalogueAllEnums()
         }
         file.close();
     }
+}
+
+void Scripting::catalogueAllTypes()
+{
+    struct TypeNameAndPath
+    {
+        std::string typeName;
+        std::string relativePath;
+    };
+
+    std::filesystem::path currentPath = "Scripting Docs/cwtools-vic3-config-master/config/common/";
+
+    std::vector<TypeNameAndPath> initialTypesInfo;
+
+    for (auto& dir_entry : std::filesystem::directory_iterator{ currentPath })
+    {
+        std::ifstream file = std::ifstream(dir_entry.path().string());
+        if (file.is_open())
+        {
+            while (file.good())
+            {
+                std::string line;
+                std::getline(file, line, '\n');
+                if (line.starts_with("    type["))
+                {
+                    initialTypesInfo.emplace_back(line.substr(9,line.find_first_of(']') - 9),"");
+                    continue;
+                }
+
+                if (line.starts_with("        path = \""))
+                {
+                    initialTypesInfo.back().relativePath = line.substr(16, line.find_first_of('\"',17) - 16);
+                    continue;
+                }
+            }
+
+            file.close();
+        }
+
+    }
+
+    types.resize(initialTypesInfo.size());
+    std::atomic<int> iterator = 0;
+    std::for_each(std::execution::par, initialTypesInfo.begin(), initialTypesInfo.end(), [&](TypeNameAndPath type)
+    {
+        int i = iterator++;
+        types[i].name = type.typeName;
+        std::filesystem::path absolutePath = Settings::gameDirectory.getSetting() / type.relativePath;
+        //RE_LogMessage("Type: " + type.typeName + " Path: " + absolutePath.generic_string());
+        if (std::filesystem::exists(absolutePath))
+        {
+            for (auto& dir_entry : std::filesystem::directory_iterator{ absolutePath })
+            {
+                if (dir_entry.path().extension().string() == ".info")
+                {
+                    continue;
+                }
+
+                std::ifstream file = std::ifstream(dir_entry.path().string());
+
+                if (file.is_open())
+                {
+                    //skip BOM
+                    if (file.peek() == 0xEF)
+                    {
+                        file.seekg(3);
+                    }
+
+                    while (file.good())
+                    {
+                        std::string line;
+                        std::getline(file, line, '\n');
+
+                        if (line == "")
+                        {
+                            continue;
+                        }
+                        if (line.starts_with('#'))
+                        {
+                            continue;
+                        }
+                        if (line.starts_with(' '))
+                        {
+                            continue;
+                        }
+                        if (line.starts_with('\t'))
+                        {
+                            continue;
+                        }
+                        if (line.starts_with('}'))
+                        {
+                            continue;
+                        }
+
+                        types[i].options.emplace_back(line.substr(0, line.find_first_of(' ')));
+                    }
+
+
+                    file.close();
+                }
+                else
+                {
+                    RE_LogError("Could not open file: " + dir_entry.path().string());
+                }
+            }
+        }
+        else
+        {
+            RE_LogError("Path doesn't exist");
+        }
+    });
+
 }
 
 std::string Scripting::beautifyName(std::string input)
@@ -412,6 +526,16 @@ void Scripting::addParam(std::string_view input, std::vector<ScriptingParam>& li
     }
 }
 
+int Scripting::countScope(scopeKey scope)
+{
+#ifdef _MSC_VER
+    return __popcnt64(scope);
+#else
+#error "countScope not supported on this compiler yet"
+#endif // _MSC_VER
+    
+}
+
 BasicNode* Scripting::getParam(std::string_view input)
 {
     if (input == "bool")
@@ -449,6 +573,19 @@ BasicNode* Scripting::getParam(std::string_view input)
         }
     }
 
+    if (input.starts_with("<"))
+    {
+        auto typeName = input.substr(1, input.find_first_of('>') - 1);
+        for (auto& type : types)
+        {
+            if (type.name == typeName)
+            {
+                return new Param<ScriptingType>(type, "");
+            }
+        }
+    }
+
+
 
     RE_LogWarning(std::string("Could not find suitable param for given input: ") + input.data());
 
@@ -472,6 +609,18 @@ YAML::Node Param<NoBehaviour>::Serialize()
     return node;
 }
 
+Trigger::Trigger(PossibleTrigger& trigger)
+{
+    name = trigger.name;
+    description = trigger.description;
+    for (auto& input : trigger.paramInputs)
+    {
+        Scripting::addParam(input, parametersType);
+    }
+    scopes = trigger.scopes;
+    interfaceTrigger = trigger.interfaceTrigger;
+}
+
 YAML::Node Trigger::Serialize()
 {
     return YAML::Node();
@@ -486,7 +635,7 @@ void Pin::DrawPin()
 {
     if (scopes)
     {
-        
+        ImGui::PushID(this);
         if (pinKind == ed::PinKind::Input)
         {
             ed::BeginPin(id, pinKind);
@@ -508,7 +657,7 @@ void Pin::DrawPin()
             ImGui::Text("->");
             ed::EndPin();
         }
-
+        ImGui::PopID();
         
     }
 }

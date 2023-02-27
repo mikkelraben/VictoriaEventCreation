@@ -20,6 +20,7 @@ void TriggerDebugInfo(Trigger& trigger)
     if (trigger.node)
     {
         ImGui::Text(("scope_id: " + std::to_string(trigger.node->scopeInput.id.Get())).c_str());
+        ImGui::Text(("node_id: " + std::to_string(trigger.node->id.Get())).c_str());
     }
 
     for (auto& parameter : trigger.parametersType)
@@ -38,6 +39,11 @@ void TriggerDebugInfo(Trigger& trigger)
             ImGui::SameLine();
             ImGui::Text(" | Not Comparable");
         }
+        if (auto pin = dynamic_cast<Param<Pin>*>(parameter.param))
+        {
+            ImGui::Text(("pin_id: " + std::to_string(pin->variable.id.Get())).c_str());  
+        }
+
     }
     ImGui::Text(std::to_string(trigger.scopes).c_str());
 
@@ -164,18 +170,22 @@ ImGui::SameLine();
 
         ed::Suspend();
 
+        bool justOpened = false;
         if (ed::ShowBackgroundContextMenu())
         {
             ImGui::OpenPopup("Create New Node");
+
+            justOpened = true;
         }
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12, 12));
         ImGui::SetNextWindowSizeConstraints({ 32,90 }, { -1,512 });
         if (ImGui::BeginPopup("Create New Node"))
         {
-            if (ed::ShowBackgroundContextMenu())
+            if (justOpened)
             {
                 ImGui::SetKeyboardFocusHere();
+                //ImGui::ScrollToItem();
             }
             if (auto trigger = Scripting::selectTrigger())
             {
@@ -240,8 +250,18 @@ ImGui::SameLine();
         {
             ImGui::BeginChild("Triggers");
             static std::string filter;
+            static std::vector<Trigger> allTriggers;
+            if (allTriggers.empty())
+            {
+                for (auto& trigger : Scripting::triggers)
+                {
+                    allTriggers.emplace_back(trigger);
+                }
+            }
+            
             ImGui::InputText("Filter", &filter);
-            for (auto& trigger : Scripting::triggers)
+            
+            for (auto& trigger : allTriggers)
             {
                 if (trigger.name.find(filter) != std::string::npos)
                 {
@@ -302,6 +322,27 @@ ImGui::SameLine();
             }
             ImGui::EndChild();
         }
+
+        static bool showTypes = false;
+        VecGui::CheckBox("Show Types", showTypes);
+        if (showTypes)
+        {
+            ImGui::BeginChild("Types");
+            for (auto& type : Scripting::types)
+            {
+                ImGui::Text(type.name.c_str());
+                ImGui::Indent();
+                for (auto option : type.options)
+                {
+
+                    ImGui::Text(option.c_str());
+                }
+                ImGui::Unindent();
+                ImGui::Separator();
+            }
+            ImGui::EndChild();
+        }
+
         ImGui::EndTabItem();
     }
 #endif // _DEBUG
@@ -409,13 +450,13 @@ void EventTool::Opened()
     {
         if (trigger.name == "commander_pm_usage")
         {
-            node = &trigger;
+            node = new Trigger(trigger);
         }
     }
 
     if (node)
     {
-        node->node = new NodeEditorNode({ 0,0 },node->scopes);
+        node->node = new NodeEditorNode({ 200,100 },node->scopes);
         object.behaviourNodes.push_back(node);
     }
 

@@ -6,6 +6,8 @@ namespace ed = ax::NodeEditor;
 
 typedef unsigned long long scopeKey;
 
+static int getId() { static int id = 1; return id++; };
+
 struct scope
 {
     std::string name;
@@ -44,19 +46,32 @@ struct ScriptingEnum
     size_t selected = (size_t) -1;
 };
 
+struct ScriptingType
+{
+    std::string name;
+    std::vector<std::string> options;
+    size_t selected = (size_t)-1;
+};
+
+enum class PinShapes
+{
+    square,
+    circle,
+};
+
 struct Pin
 {
     Pin() { Pin(ed::PinKind::Input, 0); };
     Pin(ed::PinKind type, scopeKey supportedScopes)
     {
-        static int pinIdCounter = 1;
-        id = pinIdCounter++;
+        id = getId();
         pinKind = type;
         scopes = supportedScopes;
     }
     ed::PinId id;
     ed::PinKind pinKind;
     scopeKey scopes;
+
     void DrawPin();
 };
 
@@ -64,8 +79,7 @@ struct Link
 {
     Link(ed::PinId thisId, ed::PinId otherId)
     {
-        static int counter = 1;
-        id = counter++;
+        id = getId();
         startId = thisId;
         endId = otherId;
     }
@@ -80,8 +94,7 @@ class NodeEditorNode
 public:
     NodeEditorNode(ImVec2 position, scopeKey scopes) : scopeInput(ed::PinKind::Input, scopes)
     {
-        static int counter = 1;
-        id = counter++;
+        id = getId();
         x = position.x;
         y = position.y;
         ed::SetNodePosition(id, position);
@@ -109,8 +122,19 @@ struct NodeConnection
     void drawLink();
 };
 
+struct PossibleTrigger
+{
+    std::string name;
+    std::string description;
+    std::vector<std::string> paramInputs;
+    scopeKey scopes = 0;
+    bool interfaceTrigger = false;
+};
+
 struct Trigger : public BasicNode
 {
+    Trigger() = default;
+    Trigger(PossibleTrigger& trigger);
     YAML::Node Serialize() override;
     void Deserialize(const YAML::Node& node);
 
@@ -121,7 +145,6 @@ struct Trigger : public BasicNode
     // other triggers
     std::vector<NodeConnection> children;
 
-
     //parameters inside node
     std::vector<ScriptingParam> parametersType;
     scopeKey scopes = 0;
@@ -131,22 +154,24 @@ struct Trigger : public BasicNode
 
 struct Scripting
 {
-    static void InitScripting() { RE_LogMessage("Initializing Scripting"); catalogueAllScopes(); catalogueAllEnums(); catalogueAllTriggers();  };
-    static std::vector<Trigger> triggers;
+    static void InitScripting() { RE_LogMessage("Initializing Scripting"); catalogueAllScopes(); catalogueAllEnums(); catalogueAllTypes(); catalogueAllTriggers();  };
+    static std::vector<PossibleTrigger> triggers;
     static std::vector<scope> scopes;
     static std::vector<ScriptingEnum> enums;
+    static std::vector<ScriptingType> types;
     //subset of scopes inwhich a trigger exists
     static std::vector<scope> utilizedScopes;
 
     static Trigger* selectTrigger();
-
+    static void addParam(std::string_view input, std::vector<ScriptingParam>& list);
+    int countScope(scopeKey scope);
+    
 private:
     static void catalogueAllTriggers();
     static void catalogueAllScopes();
     static void catalogueAllEnums();
+    static void catalogueAllTypes();
     static std::string beautifyName(std::string input);
-
-    static void addParam(std::string_view input, std::vector<ScriptingParam>& list);
 
     static BasicNode* getParam(std::string_view input);
 };
@@ -198,6 +223,37 @@ namespace YAML
             return true;
         }
     };
+
+    template<>
+    struct convert<ScriptingType>
+    {
+        static Node encode(const ScriptingType& rhs)
+        {
+            Node node;
+
+            node.push_back(rhs.name);
+            node.push_back(rhs.selected);
+            return node;
+        }
+
+        static bool decode(const Node& node, ScriptingType& rhs)
+        {
+            if (!node.IsSequence() && node.size() == 2)
+                return false;
+            auto enumName = node[0].as<std::string>();
+            for (auto& scriptEnum : Scripting::types)
+            {
+                if (scriptEnum.name == enumName)
+                {
+                    rhs = scriptEnum;
+                }
+            }
+            rhs.selected = node[1].as<std::size_t>();
+
+            return true;
+        }
+    };
+
 
     template<>
     struct convert<Pin>

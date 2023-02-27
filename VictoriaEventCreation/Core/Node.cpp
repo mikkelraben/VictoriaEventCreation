@@ -15,66 +15,6 @@ BasicNode* BasicNode::findChildFromName(std::vector<BasicNode*>& children, std::
     return nullptr;
 }
 
-//void Node::EditableField()
-//{
-//    ImGui::Text("Hello There");
-//}
-//
-//YAML::Node Node::Serialize()
-//{
-//    YAML::Node node;
-//    node["type"] = "node";
-//    node["name"] = name;
-//    node["possibleScope"] = possibleScope;
-//    node["formalName"] = formalName;
-//    YAML::Node childrenNode;
-//    for (auto& child : children)
-//    {
-//        childrenNode.push_back(child->Serialize());
-//    }
-//    node["children"] = childrenNode;
-//
-//    return node;
-//}
-//
-//void Node::Deserialize(const YAML::Node& node)
-//{
-//    RE_ASSERT(node["type"].as<std::string>() == "node");
-//
-//    name = node["name"].as<std::string>();
-//    int newScope = 0;
-//
-//    formalName = node["formalName"].as<std::string>();
-//    YAML::Node childrenNode = node["children"];
-//    for (auto child : childrenNode)
-//    {
-//        BasicNode* newChild;
-//        if (child["type"].as<std::string>() == "node")
-//        {
-//            newChild = new Node("", "");
-//        }
-//        else if (child["type"].as<std::string>() == "param")
-//        {
-//            if (child["variableType"].as<std::string>() == "int")
-//            {
-//                newChild = new Param<int>(0, "");
-//            }
-//            else
-//            {
-//                RE_LogError("Could not deduce variable type");
-//                return;
-//            }
-//        }
-//        else
-//        {
-//            RE_LogError("Child node not node or param");
-//            return;
-//        }
-//        newChild->Deserialize(child);
-//        children.push_back(newChild);
-//    }
-//}
-
 template<>
 void Param<int>::EditableField()
 {
@@ -326,6 +266,74 @@ YAML::Node Param<ScriptingEnum>::Serialize()
     node["name"] = name;
     node["variable"] = variable;
     node["variableType"] = "Enum";
+
+    return node;
+}
+
+void Param<ScriptingType>::EditableField()
+{
+    ImGui::PushID(&name);
+    ImGui::PushItemWidth(200);
+    std::string preview;
+    if (variable.selected < variable.options.size())
+    {
+        preview = variable.options[variable.selected];
+    }
+    else
+    {
+        preview = variable.options[0];
+    }
+
+    bool insideNode = ed::GetCurrentEditor();
+
+    static std::string filter = "";
+    
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12, 12));
+    ImGui::SetNextWindowSizeConstraints({ 32,90 }, { -1,512 });
+    if (VecGui::BeginCombo("##Types", preview.c_str(), 0))
+    {
+        ImGui::InputText("Filter", &filter);
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, { 0,0 });
+
+        for (size_t i = 0; i < variable.options.size(); i++)
+        {
+            if (variable.options[i].find(filter) != std::string::npos)
+            {
+                bool isSelected = variable.selected == i;
+                if (VecGui::Button(variable.options[i].c_str(), true, { -1,32 }))
+                {
+                    variable.selected = i;
+                    ImGui::CloseCurrentPopup();
+                }
+
+                if (isSelected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+        }
+        ImGui::EndCombo();
+        ImGui::PopStyleVar();
+        if (insideNode)
+        {
+            ed::Resume();
+        }
+    }
+    ImGui::PopStyleVar();
+
+
+
+    ImGui::PopID();
+    ImGui::PopItemWidth();
+}
+
+YAML::Node Param<ScriptingType>::Serialize()
+{
+    YAML::Node node;
+    node["type"] = "param";
+    node["name"] = name;
+    node["variable"] = variable;
+    node["variableType"] = "Type";
 
     return node;
 }

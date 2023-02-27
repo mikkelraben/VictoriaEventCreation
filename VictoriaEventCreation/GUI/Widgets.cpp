@@ -191,7 +191,7 @@ bool VecGui::BeginCombo(const char* label, const char* preview_value, ImGuiCombo
 
 
     Image({ bb.Max.x - 24, bb.Min.y + 8}, *expandIcon.get(), { 16,16 }, {0,0}, {1,1}, { 255,255,255,(int)(255 * 0.7) }, true);
-    
+
     if (!popup_open)
     {
         return false;
@@ -206,6 +206,12 @@ bool VecGui::BeginCombo(const char* label, const char* preview_value, ImGuiCombo
 
     g.NextWindowData.Flags = backup_next_window_data_flags;
     auto returnValue = ImGui::BeginComboPopup(popup_id, bb, flags);
+
+    if (ed::GetCurrentEditor())
+    {
+        Image({ bb.Max.x - 24, bb.Min.y + 8 }, *expandIcon.get(), { 16,16 }, { 0,0 }, { 1,1 }, { 255,255,255,(int)(255 * 0.7) }, true);
+    }
+
     return returnValue;
 }
 
@@ -517,7 +523,13 @@ void VecGui::Image(ImVec2 Pos, Texture& texture, ImVec2 size, ImVec2 uvMin, ImVe
     ImRect bb(Pos, Pos + size);
     ImGui::ItemSize(bb);
     if (!ImGui::ItemAdd(bb, 0))
+    {
+        if (floating)
+        {
+            ImGui::SetCursorScreenPos(floatingPos);
+        }
         return;
+    }
 
     if (floating)
     {

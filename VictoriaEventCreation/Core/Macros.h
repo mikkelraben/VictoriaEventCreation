@@ -21,3 +21,14 @@ if (result != value)                                                            
 #define RE_ASSERT_ZERO(booleanReturn) AssertFunction(booleanReturn, __FILE__, __LINE__,0)
 
 #define RE_ASSERT(booleanReturn) AssertFunction(booleanReturn, __FILE__, __LINE__,true)
+
+#ifdef _DEBUG
+#define RE_DEBUG_ASSERT_ZERO(booleanReturn) AssertFunction(booleanReturn, __FILE__, __LINE__,0)
+
+#define RE_DEBUG_ASSERT(booleanReturn) AssertFunction(booleanReturn, __FILE__, __LINE__,true)
+#else
+#define RE_DEBUG_ASSERT_ZERO(booleanReturn)
+
+#define RE_DEBUG_ASSERT(booleanReturn)
+#endif // _DEBUG
+
