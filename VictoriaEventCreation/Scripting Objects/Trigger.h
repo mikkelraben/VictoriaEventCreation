@@ -57,19 +57,22 @@ enum class PinShapes
 {
     square,
     circle,
+    arrow,
 };
 
 struct Pin
 {
-    Pin() { Pin(ed::PinKind::Input, 0); };
-    Pin(ed::PinKind type, scopeKey supportedScopes)
+    Pin() { Pin(ed::PinKind::Input, 0, PinShapes::square); };
+    Pin(ed::PinKind type, scopeKey supportedScopes, PinShapes shape)
     {
         id = getId();
         pinKind = type;
         scopes = supportedScopes;
+        pinShape = shape;
     }
     ed::PinId id;
     ed::PinKind pinKind;
+    PinShapes pinShape;
     scopeKey scopes;
 
     void DrawPin();
@@ -92,7 +95,7 @@ struct Link
 class NodeEditorNode
 {
 public:
-    NodeEditorNode(ImVec2 position, scopeKey scopes) : scopeInput(ed::PinKind::Input, scopes)
+    NodeEditorNode(ImVec2 position, scopeKey scopes, PinShapes shape) : scopeInput(ed::PinKind::Input, scopes,shape)
     {
         id = getId();
         x = position.x;
@@ -131,30 +134,38 @@ struct PossibleTrigger
     bool interfaceTrigger = false;
 };
 
-struct Trigger : public BasicNode
+struct ScriptingObject : public BasicNode
+{
+    NodeEditorNode* node = nullptr;
+
+    std::string description;
+
+    // other triggers do not manually add or remove from this vector
+    std::vector<NodeConnection> children;
+
+    //parameters inside node
+    std::vector<ScriptingParam> parametersType;
+
+    scopeKey scopes = 0;
+    scopeKey activeScope = 0;
+    void addChild(Pin& thisPin, Pin& endPin, ScriptingObject& endNode);
+    void removeChild();
+};
+
+struct Trigger : public ScriptingObject
 {
     Trigger() = default;
     Trigger(PossibleTrigger& trigger);
     YAML::Node Serialize() override;
     void Deserialize(const YAML::Node& node);
 
-    NodeEditorNode* node = nullptr;
-
-    std::string description;
-
-    // other triggers
-    std::vector<NodeConnection> children;
-
-    //parameters inside node
-    std::vector<ScriptingParam> parametersType;
-    scopeKey scopes = 0;
     bool interfaceTrigger = false;
 };
 
 
 struct Scripting
 {
-    static void InitScripting() { RE_LogMessage("Initializing Scripting"); catalogueAllScopes(); catalogueAllEnums(); catalogueAllTypes(); catalogueAllTriggers();  };
+    static void InitScripting() { RE_LogMessage("Initializing Scripting"); catalogueAllScopes(); catalogueAllEnums(); catalogueAllTypes(); catalogueAllTriggers(); catalogueAllTargets();};
     static std::vector<PossibleTrigger> triggers;
     static std::vector<scope> scopes;
     static std::vector<ScriptingEnum> enums;
@@ -171,6 +182,7 @@ private:
     static void catalogueAllScopes();
     static void catalogueAllEnums();
     static void catalogueAllTypes();
+    static void catalogueAllTargets();
     static std::string beautifyName(std::string input);
 
     static BasicNode* getParam(std::string_view input);
@@ -264,6 +276,7 @@ namespace YAML
 
             node.push_back(rhs.scopes);
             node.push_back((int)rhs.pinKind);
+            node.push_back((int)rhs.pinShape);
             return node;
         }
 
@@ -272,7 +285,7 @@ namespace YAML
             if (!node.IsSequence() && node.size() == 2)
                 return false;
 
-            rhs = Pin((ed::PinKind)node[1].as<int>(), node[0].as<scopeKey>());
+            rhs = Pin((ed::PinKind)node[1].as<int>(), node[0].as<scopeKey>(), (PinShapes)node[2].as<int>());
 
             return true;
         }

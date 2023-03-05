@@ -15,7 +15,7 @@ public:
     }
     void Run() override;
     void createLink(ax::NodeEditor::PinId& inputPinId, ax::NodeEditor::PinId& outputPinId);
-    void findPin(ax::NodeEditor::PinId& inputPinId, Pin*& input, Trigger*& inputNode);
+    void findPin(ax::NodeEditor::PinId& inputPinId, Pin*& input, ScriptingObject*& inputNode);
     void Properties() override;
     void Opened() override;
     void Exit() override;
@@ -23,6 +23,7 @@ private:
     Event object;
     ax::NodeEditor::EditorContext* editor_Context = nullptr;
     ed::NodeId contextNodeId = 0;
+    Pin* hoveredPin = nullptr;
 };
 
 class Console : public BaseApp::Window

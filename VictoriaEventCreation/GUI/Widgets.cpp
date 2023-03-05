@@ -466,6 +466,32 @@ void VecGui::NoImageBehaviour(ImVec2& cursor, ImVec2& size, ImDrawList* draw_lis
     draw_list->AddRectFilled(cursor, cursor + size, noImageColor);
 }
 
+void VecGui::DrawPinShape(PinShapes pinShape)
+{
+    auto cursor = ImGui::GetCursorScreenPos();
+
+    const float size = ImGui::GetFontSize();
+    ImVec2 max = { cursor.x + size, cursor.y + size };
+    auto drawlist = ImGui::GetWindowDrawList();
+    ImRect bb(cursor, max);
+    ImGui::ItemSize({ size ,size });
+    ImGui::ItemAdd(bb, 0);
+
+    if (pinShape == PinShapes::square)
+    {
+        drawlist->AddRect(cursor, max, IM_COL32_WHITE, 2, 0, 2);
+    }
+    else if (pinShape == PinShapes::circle)
+    {
+        ImVec2 middle = { cursor.x + size / 2, cursor.y + size / 2 };
+        drawlist->AddCircle(middle, size / 2, IM_COL32_WHITE, 16, 2);
+    }
+    else if (pinShape == PinShapes::arrow)
+    {
+
+    }
+}
+
 bool VecGui::ImageButton(std::string_view id, Texture& texture, const ImVec2& size, const ImVec2& uvMin, const ImVec2& uvMax)
 {
     if (texture.initialized)

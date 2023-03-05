@@ -1,6 +1,7 @@
 #pragma once
 #include "../Core/imgui/imgui.h"
 #include "../Core/Texture.h"
+#include "../Scripting Objects/Trigger.h"
 
 
 namespace VecGui
@@ -40,5 +41,6 @@ namespace VecGui
     void NineSliceImage(Texture& texture, ImVec2 size, VecRect middleSlice, ImVec2 uvMin = { 0,0 }, ImVec2 uvMax = { 1,1 }, ImColor color = IM_COL32_WHITE, float scale = 1, bool isFloating = false, BlendMode colorBlend = BlendMode::normal);
     void NineSliceImage(Texture& texture, Texture& alphaMask, ImVec2 size, VecRect middleSlice, ImVec2 uvMin = { 0,0 }, ImVec2 uvMax = { 1,1 }, ImVec2 uvAlphaMin = { 0,0 }, ImVec2 uvAlphaMax = { 0,0 },ImColor color = IM_COL32_WHITE, float scale = 1,bool isFloating = false, BlendMode colorBlend = BlendMode::normal);
     void NoImageBehaviour(ImVec2& cursor, ImVec2& size, ImDrawList* draw_list, bool isFloating = false);
+    void DrawPinShape(PinShapes pinShape);
 }
 

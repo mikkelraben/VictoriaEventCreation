@@ -7,6 +7,6 @@ class Event
 public:
     Event();
     std::vector<BasicNode*> children;
-    std::vector<Trigger*> behaviourNodes;
+    std::vector<ScriptingObject*> behaviourNodes;
 };
 

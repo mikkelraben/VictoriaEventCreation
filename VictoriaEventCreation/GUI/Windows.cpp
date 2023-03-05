@@ -94,12 +94,21 @@ void EventTool::Run()
         size = size + ImVec2(0, -21);
         ed::Begin("Behaviour", size);
         bool tooltip = false;
+        bool pinTooltip = false;
         
         //For each node
         for (auto& node : object.behaviourNodes)
         {
             ed::BeginNode(node->node->id);
-            node->node->scopeInput.DrawPin();
+            if (node->scopes)
+            {
+                node->node->scopeInput.DrawPin();
+                pinTooltip |= ImGui::IsItemHovered();
+                if (ImGui::IsItemHovered())
+                {
+                    hoveredPin = &node->node->scopeInput;
+                }
+            }
             ImGui::Text(node->name.c_str());
             tooltip |= ImGui::IsItemHovered();
             if (ImGui::IsItemHovered())
@@ -137,20 +146,36 @@ void EventTool::Run()
                     //            parameter.comparer = (Comparors)i;
                     //            ImGui::CloseCurrentPopup();
                     //        }
-
+                    //
                     //        if (isSelected)
                     //        {
                     //            ImGui::SetItemDefaultFocus();
                     //        }
                     //    }
-//    ImGui::EndCombo();
-//    ed::Resume();
-//}
-ImGui::PopID();
-ImGui::SameLine();
+                    //    ImGui::EndCombo();
+                    //    ed::Resume();
+                    //}
+                    ImGui::PopID();
+                    ImGui::SameLine();
                 }
                 ImGui::SameLine();
-                parameter.param->EditableField();
+                if (Param<Pin>* pin = dynamic_cast<Param<Pin>*>(parameter.param))
+                {
+                    if (pin->variable.scopes)
+                    {
+                        parameter.param->EditableField();
+                        pinTooltip |= ImGui::IsItemHovered();
+                        if (ImGui::IsItemHovered())
+                        {
+                            hoveredPin = &pin->variable;
+                        }
+                    }
+                }
+                else
+                {
+                    parameter.param->EditableField();
+                }
+
 
 
 
@@ -185,40 +210,63 @@ ImGui::SameLine();
             if (justOpened)
             {
                 ImGui::SetKeyboardFocusHere();
-                //ImGui::ScrollToItem();
             }
             if (auto trigger = Scripting::selectTrigger())
             {
-                trigger->node = new NodeEditorNode(popupPosition, trigger->scopes);
+                trigger->node = new NodeEditorNode(popupPosition, trigger->scopes, PinShapes::circle);
                 object.behaviourNodes.push_back(trigger);
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
         }
 
-        if (tooltip)
+        if (tooltip && contextNodeId.Get())
         {
             ImGui::BeginTooltip();
-            Trigger* selectedTrigger = nullptr;
+            ScriptingObject* selectedObject = nullptr;
             for (auto& node : object.behaviourNodes)
             {
                 if (node->node->id == contextNodeId)
                 {
-                    selectedTrigger = node;
+                    selectedObject = node;
                     break;
                 }
             }
-            if (selectedTrigger)
+            if (selectedObject)
             {
                 ImGui::PushTextWrapPos(512);
-                ImGui::Text(("Description: " + selectedTrigger->description).c_str());
+                ImGui::Text(("Description: " + selectedObject->description).c_str());
                 ImGui::PopTextWrapPos();
             }
+            ImGui::Text("Active Scopes: ");
+            for (auto& scope : Scripting::scopes)
+            {
+                if (selectedObject->activeScope & scope.key)
+                {
+                    ImGui::Text(scope.name.c_str());
+                }
+            }
+
 
 
             ImGui::EndTooltip();
         }
 
+        if (hoveredPin && pinTooltip)
+        {
+            ImGui::BeginTooltip();
+            
+            ImGui::Text("Possible Scopes");
+            for (auto& scope : Scripting::scopes)
+            {
+                if (hoveredPin->scopes & scope.key)
+                {
+                    ImGui::Text(scope.name.c_str());
+                }
+            }
+
+            ImGui::EndTooltip();
+        }
 
         ImGui::PopStyleVar();
         ed::Resume();
@@ -363,8 +411,8 @@ void EventTool::createLink(ax::NodeEditor::PinId& inputPinId, ax::NodeEditor::Pi
 
         Pin* input = nullptr;
         Pin* output = nullptr;
-        Trigger* inputNode = nullptr;
-        Trigger* outputNode = nullptr;
+        ScriptingObject* inputNode = nullptr;
+        ScriptingObject* outputNode = nullptr;
         findPin(inputPinId, input, inputNode);
         findPin(outputPinId, output, outputNode);
 
@@ -390,13 +438,20 @@ void EventTool::createLink(ax::NodeEditor::PinId& inputPinId, ax::NodeEditor::Pi
         {
             if (input && output && outputNode && inputNode)
             {
-                inputNode->children.emplace_back(*input, *output, *outputNode->node);
+                if (input->pinKind == ed::PinKind::Output)
+                {
+                    inputNode->addChild(*input,*output,*outputNode);
+                }
+                else
+                {
+                    outputNode->addChild(*output, *input, *inputNode);
+                }
             }
         }
     }
 }
 
-void EventTool::findPin(ax::NodeEditor::PinId& inputPinId, Pin*& input, Trigger*& inputNode)
+void EventTool::findPin(ax::NodeEditor::PinId& inputPinId, Pin*& input, ScriptingObject*& inputNode)
 {
     for (auto& node : object.behaviourNodes)
     {
@@ -456,7 +511,7 @@ void EventTool::Opened()
 
     if (node)
     {
-        node->node = new NodeEditorNode({ 200,100 },node->scopes);
+        node->node = new NodeEditorNode({ 200,100 },node->scopes,PinShapes::circle);
         object.behaviourNodes.push_back(node);
     }
 
@@ -466,7 +521,7 @@ void EventTool::Opened()
     mainNode->name = "Trigger";
     mainNode->description = "When conditions are satisfied this triggers the event";
     mainNode->scopes = 0;
-    mainNode->node = new NodeEditorNode({ 0,0 }, mainNode->scopes);
+    mainNode->node = new NodeEditorNode({ 0,0 }, mainNode->scopes, PinShapes::circle);
     scope* Scope = nullptr;
     for (auto& scope : Scripting::scopes)
     {
@@ -479,9 +534,10 @@ void EventTool::Opened()
 
     if (Scope)
     {
-        Param<Pin>* mainOutput = new Param<Pin>{ {ed::PinKind::Output,Scope->key},"Trigger" };
+        Param<Pin>* mainOutput = new Param<Pin>{ {ed::PinKind::Output,Scope->key,PinShapes::circle},"Trigger" };
 
         mainNode->parametersType.emplace_back(mainOutput, false, Comparors::equal);
+        mainNode->activeScope = Scope->key;
         object.behaviourNodes.push_back(mainNode);
     }
 

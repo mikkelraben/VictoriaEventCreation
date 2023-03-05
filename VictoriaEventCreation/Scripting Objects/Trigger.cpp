@@ -58,7 +58,6 @@ Trigger* Scripting::selectTrigger()
                 }
             }
         }
-
     }
 
     ImGui::PopStyleVar();
@@ -446,6 +445,112 @@ void Scripting::catalogueAllTypes()
 
 }
 
+void Scripting::catalogueAllTargets()
+{
+    struct TempTarget
+    {
+        std::string typeName;
+        std::string relativePath;
+    };
+
+
+    constexpr auto max_size = std::numeric_limits<std::streamsize>::max();
+    std::ifstream file("Scripting Docs/event_targets.log");
+    if (file.is_open())
+    {
+
+        file.seekg(48);
+
+        PossibleTrigger trigger;
+        TriggersState state = TriggersState::none;
+
+        while (file.good())
+        {
+            std::string line;
+            std::getline(file, line, '\n');
+            if (line == "")
+            {
+                if (state == TriggersState::read)
+                {
+                    Scripting::triggers.push_back(trigger);
+                    trigger = PossibleTrigger{};
+                }
+                continue;
+            }
+
+            if (line == "--------------------")
+            {
+                state = TriggersState::title;
+                continue;
+            }
+
+            if (state == TriggersState::title)
+            {
+                auto titleLength = line.find(' ');
+                if (titleLength == std::string::npos)
+                {
+                    RE_LogError("Could not find a space when it was expected");
+                }
+                auto title = line.substr(0, titleLength);
+                trigger.name = title;
+
+                auto description = line.substr(titleLength + 3);
+                trigger.description = description;
+
+
+
+                state = TriggersState::read;
+                continue;
+            }
+
+            if (line.starts_with("Supported Scopes: "))
+            {
+                auto scopes = line.substr(18);
+
+                bool moreScopesAvailable = true;
+                size_t offset = 0;
+                while (moreScopesAvailable)
+                {
+                    std::string scope;
+                    auto startOffset = offset;
+                    offset = scopes.find_first_of(',', offset);
+                    if (offset == std::string::npos)
+                    {
+                        moreScopesAvailable = false;
+                        scope = scopes.substr(startOffset);
+                    }
+                    else
+                    {
+                        scope = scopes.substr(startOffset, offset - startOffset);
+                        offset += 2;
+                    }
+                    for (auto& scopeItem : Scripting::scopes)
+                    {
+                        if (scopeItem.name == scope)
+                        {
+                            trigger.scopes |= scopeItem.key;
+                        }
+                    }
+
+
+                }
+            }
+
+            if (line.starts_with("An interface trigger"))
+            {
+                trigger.interfaceTrigger = true;
+            }
+        }
+
+        file.close();
+    }
+    else
+    {
+        RE_LogError("Could not find \"Scripting Docs/event_targets.log\"");
+    }
+
+}
+
 std::string Scripting::beautifyName(std::string input)
 {
     std::string formatted = input.data();
@@ -568,7 +673,7 @@ BasicNode* Scripting::getParam(std::string_view input)
         {
             if (scriptScope.name == scopeName)
             {
-                return new Param<Pin>({ed::PinKind::Output,scriptScope.key}, "");
+                return new Param<Pin>({ed::PinKind::Output,scriptScope.key,PinShapes::square}, "");
             }
         }
     }
@@ -618,6 +723,7 @@ Trigger::Trigger(PossibleTrigger& trigger)
         Scripting::addParam(input, parametersType);
     }
     scopes = trigger.scopes;
+    activeScope = trigger.scopes;
     interfaceTrigger = trigger.interfaceTrigger;
 }
 
@@ -636,33 +742,39 @@ void Pin::DrawPin()
     if (scopes)
     {
         ImGui::PushID(this);
-        if (pinKind == ed::PinKind::Input)
+        bool input = ed::PinKind::Input == pinKind;
+        if (input)
         {
-            ed::BeginPin(id, pinKind);
-            ImGui::Text("->");
-            ed::EndPin();
+            ImGui::Text(">");
+            ImGui::SameLine();
         }
-        ImGui::SameLine();
-        for (auto& scriptScope : Scripting::scopes)
+
+        ed::BeginPin(id, pinKind);
+        VecGui::DrawPinShape(pinShape);
+        ed::EndPin();
+
+        if (!input)
         {
-            if (scopes & scriptScope.key)
-            {
-                ImGui::Text(scriptScope.name.c_str());
-                ImGui::SameLine();
-            }
-        }
-        if (pinKind == ed::PinKind::Output)
-        {
-            ed::BeginPin(id, pinKind);
-            ImGui::Text("->");
-            ed::EndPin();
+            ImGui::SameLine();
+            ImGui::Text(">");
         }
         ImGui::PopID();
-        
     }
 }
 
 void NodeConnection::drawLink()
 {
     ed::Link(link.id, link.startId, link.endId);
+}
+
+void ScriptingObject::addChild(Pin& thisPin, Pin& endPin, ScriptingObject& endNode)
+{
+    children.emplace_back(thisPin, endPin, *endNode.node);
+    
+    endNode.activeScope = endNode.scopes & activeScope;
+}
+
+void ScriptingObject::removeChild()
+{
+
 }

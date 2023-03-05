@@ -43,7 +43,7 @@ private:
     void initImgui();
     void SetStyle();
 
-    int width = 1280, height = 720;
+    int width = 1920, height = 1080;
 
     std::vector<const char*> validationLayers = {
         "VK_LAYER_KHRONOS_validation"
