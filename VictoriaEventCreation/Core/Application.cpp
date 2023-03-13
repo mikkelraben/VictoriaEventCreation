@@ -26,10 +26,16 @@ namespace BaseApp {
 
     Application::Application()
     {
+        startup = std::chrono::high_resolution_clock::now();
+
         Settings::LoadSettings();
-        Sound::SoundSystem::InitSoundSystem();
-        Scripting::InitScripting();
-        InitWindow();
+
+        std::thread t1(Sound::SoundSystem::InitSoundSystem);
+        std::thread t2(Scripting::InitScripting);
+        std::thread t3(&Application::InitWindow,this);
+        t1.join();
+        t2.join();
+        t3.join();
 
         Window* console = new Console(windows);
         windows.push_back(console);
@@ -99,6 +105,8 @@ namespace BaseApp {
     void Application::Run()
     {
         Graphics graphics = Graphics();
+        auto startupLength = std::chrono::high_resolution_clock::now() - startup;
+        RE_LogMessage("Startup took: " + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(startupLength).count()) + "ms");
 
         while (!glfwWindowShouldClose(graphics.window))
         {

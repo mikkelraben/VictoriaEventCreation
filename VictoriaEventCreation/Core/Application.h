@@ -17,6 +17,7 @@ namespace BaseApp {
 
         std::vector<Window*> windows;
         bool isDemoOpen = false;
+        std::chrono::time_point<std::chrono::high_resolution_clock> startup;
 
     private:
         void InitWindow();

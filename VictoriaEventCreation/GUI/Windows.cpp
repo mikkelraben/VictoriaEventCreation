@@ -23,7 +23,7 @@ void TriggerDebugInfo(Trigger& trigger)
         ImGui::Text(("node_id: " + std::to_string(trigger.node->id.Get())).c_str());
     }
 
-    for (auto& parameter : trigger.parametersType)
+    for (auto& parameter : trigger.parameters)
     {
         if (parameter.param)
         {
@@ -45,7 +45,18 @@ void TriggerDebugInfo(Trigger& trigger)
         }
 
     }
-    ImGui::Text(std::to_string(trigger.scopes).c_str());
+    std::string scopes = "Scopes: ";
+
+    for (auto& scope : Scripting::scopes)
+    {
+        if (trigger.scopes & scope.key)
+        {
+            scopes = scopes + scope.name + ", ";
+        }
+    }
+    scopes.pop_back();
+    scopes.pop_back();
+    ImGui::Text(scopes.c_str());
 
     ImGui::Text("Connections: ");
 
@@ -108,6 +119,7 @@ void EventTool::Run()
                 {
                     hoveredPin = &node->node->scopeInput;
                 }
+                ImGui::SameLine();
             }
             ImGui::Text(node->name.c_str());
             tooltip |= ImGui::IsItemHovered();
@@ -120,10 +132,14 @@ void EventTool::Run()
             //ImGui::Text(std::to_string(ed::GetNodeSize(node->node->id).x).c_str());
             //ImGui::Text(std::to_string(ImGui::GetCurrentWindow()->DC.CursorPos.x).c_str());
 
-            nodeContent = { nodeContent.Min, ImVec2{ImGui::GetCurrentWindow()->DC.CursorPos.x + 200,400} };
+            nodeContent = { nodeContent.Min, ImVec2{ImGui::GetCurrentWindow()->DC.CursorPos.x + 100,400} };
+            if (node->parameters.size() == 1)
+            {
+                ImGui::SameLine();
+            }
 
             //For each parameter in each node
-            for (auto& parameter : node->parametersType)
+            for (auto& parameter : node->parameters)
             {
                 ImGui::Text(parameter.param->name.c_str());
                 if (parameter.comparable)
@@ -173,7 +189,9 @@ void EventTool::Run()
                 }
                 else
                 {
+                    ImGui::PushItemWidth(200);
                     parameter.param->EditableField();
+                    ImGui::PopItemWidth();
                 }
 
 
@@ -211,10 +229,9 @@ void EventTool::Run()
             {
                 ImGui::SetKeyboardFocusHere();
             }
-            if (auto trigger = Scripting::selectTrigger())
+            if (auto scriptingObject = Scripting::selectScriptingObject(popupPosition.x,popupPosition.y))
             {
-                trigger->node = new NodeEditorNode(popupPosition, trigger->scopes, PinShapes::circle);
-                object.behaviourNodes.push_back(trigger);
+                object.behaviourNodes.push_back(scriptingObject);
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
@@ -391,6 +408,55 @@ void EventTool::Run()
             ImGui::EndChild();
         }
 
+        static bool showTargets = false;
+        VecGui::CheckBox("Show Targets", showTargets);
+        if (showTargets)
+        {
+            ImGui::BeginChild("Targets");
+            for (auto& type : Scripting::targets)
+            {
+                ImGui::Text(type.typeName.c_str());
+                
+                std::string scopes = "Input Scopes: ";
+                for (auto& scope : Scripting::scopes)
+                {
+                    if (type.inputScopes & scope.key)
+                    {
+                        scopes = scopes + scope.name + ", ";
+                    }
+                }
+                scopes.pop_back();
+                scopes.pop_back();
+                ImGui::Text(scopes.c_str());
+
+                scopes = "Output Scopes: ";
+                for (auto& scope : Scripting::scopes)
+                {
+                    if (type.outputScopes & scope.key)
+                    {
+                        scopes = scopes + scope.name + ", ";
+                    }
+                }
+                scopes.pop_back();
+                scopes.pop_back();
+                ImGui::Text(scopes.c_str());
+
+                if (type.globalLink)
+                {
+                    ImGui::Text("Global linkable");
+                }
+                if (type.requiresData)
+                {
+                    ImGui::Text("Requires Data");
+                }
+
+                ImGui::Separator();
+            }
+            ImGui::EndChild();
+        }
+
+
+
         ImGui::EndTabItem();
     }
 #endif // _DEBUG
@@ -401,6 +467,7 @@ void EventTool::Run()
 
 void EventTool::createLink(ax::NodeEditor::PinId& inputPinId, ax::NodeEditor::PinId& outputPinId)
 {
+
     if (!inputPinId.Invalid && !outputPinId.Invalid) // both are valid, let's accept link
     {
         if (inputPinId == outputPinId)
@@ -429,8 +496,20 @@ void EventTool::createLink(ax::NodeEditor::PinId& inputPinId, ax::NodeEditor::Pi
 
         if (!(input->scopes & output->scopes))
         {
-            ed::RejectNewItem(ImColor(255, 0, 0), 2.0f);
-            return;
+            static scopeKey Scope;
+            for (auto& scope : Scripting::scopes)
+            {
+                if (scope.name == "none")
+                {
+                    Scope = scope.key;
+                    break;
+                }
+            }
+            if (!((input->scopes & Scope) || (output->scopes & Scope)))
+            {
+                ed::RejectNewItem(ImColor(255, 0, 0), 2.0f);
+                return;
+            }
         }
 
         // ed::AcceptNewItem() return true when user release mouse button.
@@ -466,7 +545,7 @@ void EventTool::findPin(ax::NodeEditor::PinId& inputPinId, Pin*& input, Scriptin
     {
         for (auto& node : object.behaviourNodes)
         {
-            for (auto& parameter : node->parametersType)
+            for (auto& parameter : node->parameters)
             {
                 if (auto pin = dynamic_cast<Param<Pin>*>(parameter.param))
                 {
@@ -536,7 +615,7 @@ void EventTool::Opened()
     {
         Param<Pin>* mainOutput = new Param<Pin>{ {ed::PinKind::Output,Scope->key,PinShapes::circle},"Trigger" };
 
-        mainNode->parametersType.emplace_back(mainOutput, false, Comparors::equal);
+        mainNode->parameters.emplace_back(mainOutput, false, Comparors::equal);
         mainNode->activeScope = Scope->key;
         object.behaviourNodes.push_back(mainNode);
     }

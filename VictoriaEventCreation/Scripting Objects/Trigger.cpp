@@ -3,10 +3,12 @@
 #include <execution>
 
 std::vector<PossibleTrigger> Scripting::triggers = {};
+std::vector<PossibleTarget> Scripting::targets = {};
 std::vector<scope> Scripting::scopes = {};
 std::vector<ScriptingEnum> Scripting::enums = {};
 std::vector<ScriptingType> Scripting::types = {};
 std::vector<scope> Scripting::utilizedScopes = {};
+scopeKey Scripting::noneScope= {};
 
 
 
@@ -17,10 +19,14 @@ enum class TriggersState
     read
 };
 
-Trigger* Scripting::selectTrigger()
+ScriptingObject* Scripting::selectScriptingObject(float x, float y)
 {
     static std::string filter;
     ImGui::InputText("Filter", &filter);
+    static bool trigger = true, target = true;
+    VecGui::CheckBox("Trigger", trigger);
+    ImGui::SameLine();
+    VecGui::CheckBox("Target", target);
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {0,0});
     if (filter.empty())
     {
@@ -28,33 +34,90 @@ Trigger* Scripting::selectTrigger()
         {
             if (ImGui::TreeNode(scope.name.c_str()))
             {
-                for (auto& scriptingTrigger : triggers)
+                if (trigger)
                 {
-                    if (scriptingTrigger.scopes & scope.key && !scriptingTrigger.interfaceTrigger)
+                    for (auto& scriptingTrigger : triggers)
                     {
-
-                        if (VecGui::Button(scriptingTrigger.name, true,{ -1,32 }))
+                        if (scriptingTrigger.scopes & scope.key && !scriptingTrigger.interfaceTrigger)
                         {
-                            ImGui::TreePop();
-                            ImGui::PopStyleVar();
-                            return new Trigger(scriptingTrigger);
+
+                            if (VecGui::Button(scriptingTrigger.name, true, { -1,32 }))
+                            {
+                                ImGui::TreePop();
+                                ImGui::PopStyleVar();
+                                ScriptingObject* object = new Trigger(scriptingTrigger);
+                                object->node = new NodeEditorNode({ x,y }, object->scopes, PinShapes::circle);
+
+                                return object;
+                            }
                         }
                     }
                 }
+                if (target)
+                {
+                    for (auto& scriptingTarget : targets)
+                    {
+                        if (scriptingTarget.inputScopes & scope.key)
+                        {
+                            if (VecGui::Button(scriptingTarget.typeName, true, { -1,32 }))
+                            {
+                                ImGui::TreePop();
+                                ImGui::PopStyleVar();
+                                ScriptingObject* object = new Target(scriptingTarget);
+                                object->node = new NodeEditorNode({ x,y }, object->scopes, PinShapes::square);
+                                Param<Pin>* mainOutput = new Param<Pin>{ {ed::PinKind::Output,scriptingTarget.outputScopes,PinShapes::circle},"Output" };
+
+                                object->parameters.emplace_back(mainOutput, false, Comparors::equal);
+
+
+                                return object;
+                            }
+                        }
+                    }
+
+                }
+
+
                 ImGui::TreePop();
             }
         }
     }
     else
     {
-        for (auto& scriptingTrigger : triggers)
+        if (trigger)
         {
-            if (scriptingTrigger.name.find(filter) != std::string::npos && !scriptingTrigger.interfaceTrigger)
+            for (auto& scriptingTrigger : triggers)
             {
-                if (VecGui::Button(scriptingTrigger.name, true,{ -1,32 }))
+                if (scriptingTrigger.name.find(filter) != std::string::npos && !scriptingTrigger.interfaceTrigger)
                 {
-                    ImGui::PopStyleVar();
-                    return new Trigger(scriptingTrigger);
+                    if (VecGui::Button(scriptingTrigger.name, true, { -1,32 }))
+                    {
+                        ImGui::PopStyleVar();
+                        ScriptingObject* object = new Trigger(scriptingTrigger);
+                        object->node = new NodeEditorNode({ x,y }, object->scopes, PinShapes::circle);
+
+                        return object;
+                    }
+                }
+            }
+        }
+        if (target)
+        {
+            for (auto& scriptingTarget : targets)
+            {
+                if (scriptingTarget.typeName.find(filter) != std::string::npos)
+                {
+                    if (VecGui::Button(scriptingTarget.typeName, true, { -1,32 }))
+                    {
+                        ImGui::PopStyleVar();
+                        ScriptingObject* object = new Target(scriptingTarget);
+                        object->node = new NodeEditorNode({ x,y }, object->scopes, PinShapes::square);
+                        Param<Pin>* mainOutput = new Param<Pin>{ {ed::PinKind::Output,scriptingTarget.outputScopes,PinShapes::circle},"Output" };
+
+                        object->parameters.emplace_back(mainOutput, false, Comparors::equal);
+
+                        return object;
+                    }
                 }
             }
         }
@@ -63,6 +126,36 @@ Trigger* Scripting::selectTrigger()
     ImGui::PopStyleVar();
 
     return nullptr;
+}
+
+
+void Scripting::GetScopes(std::string& scopes, scopeKey& scopekey)
+{
+    bool moreScopesAvailable = true;
+    size_t offset = 0;
+    while (moreScopesAvailable)
+    {
+        std::string scope;
+        auto startOffset = offset;
+        offset = scopes.find_first_of(',', offset);
+        if (offset == std::string::npos)
+        {
+            moreScopesAvailable = false;
+            scope = scopes.substr(startOffset);
+        }
+        else
+        {
+            scope = scopes.substr(startOffset, offset - startOffset);
+            offset += 2;
+        }
+        for (auto& scopeItem : Scripting::scopes)
+        {
+            if (scopeItem.name == scope)
+            {
+                scopekey |= scopeItem.key;
+            }
+        }
+    }
 }
 
 void Scripting::catalogueAllTriggers()
@@ -119,33 +212,7 @@ void Scripting::catalogueAllTriggers()
             {
                 auto scopes = line.substr(18);
 
-                bool moreScopesAvailable = true;
-                size_t offset = 0;
-                while (moreScopesAvailable)
-                {
-                    std::string scope;
-                    auto startOffset = offset;
-                    offset = scopes.find_first_of(',', offset);
-                    if (offset == std::string::npos)
-                    {
-                        moreScopesAvailable = false;
-                        scope = scopes.substr(startOffset);
-                    }
-                    else
-                    {
-                        scope = scopes.substr(startOffset, offset - startOffset);
-                        offset += 2;
-                    }
-                    for (auto& scopeItem : Scripting::scopes)
-                    {
-                        if (scopeItem.name == scope)
-                        {
-                            trigger.scopes |= scopeItem.key;
-                        }
-                    }
-                    
-
-                }
+                GetScopes(scopes, trigger.scopes);
             }
 
             if (line.starts_with("An interface trigger"))
@@ -292,6 +359,16 @@ void Scripting::catalogueAllScopes()
     else
     {
         RE_LogError("Could not find \"Scripting Docs/event_scopes.log\"");
+    }
+
+
+    for (auto& scope : Scripting::scopes)
+    {
+        if (scope.name == "none")
+        {
+            noneScope = scope.key;
+            break;
+        }
     }
 
 
@@ -447,21 +524,14 @@ void Scripting::catalogueAllTypes()
 
 void Scripting::catalogueAllTargets()
 {
-    struct TempTarget
-    {
-        std::string typeName;
-        std::string relativePath;
-    };
-
-
     constexpr auto max_size = std::numeric_limits<std::streamsize>::max();
     std::ifstream file("Scripting Docs/event_targets.log");
     if (file.is_open())
     {
 
-        file.seekg(48);
+        file.seekg(29);
 
-        PossibleTrigger trigger;
+        PossibleTarget target;
         TriggersState state = TriggersState::none;
 
         while (file.good())
@@ -472,11 +542,18 @@ void Scripting::catalogueAllTargets()
             {
                 if (state == TriggersState::read)
                 {
-                    Scripting::triggers.push_back(trigger);
-                    trigger = PossibleTrigger{};
+                    Scripting::targets.push_back(target);
+                    target = PossibleTarget{};
                 }
                 continue;
             }
+
+            //line always at the end
+            if (line == "Event Targets Saved from Code:")
+            {
+                break;
+            }
+
 
             if (line == "--------------------")
             {
@@ -492,10 +569,10 @@ void Scripting::catalogueAllTargets()
                     RE_LogError("Could not find a space when it was expected");
                 }
                 auto title = line.substr(0, titleLength);
-                trigger.name = title;
+                target.typeName = title;
 
                 auto description = line.substr(titleLength + 3);
-                trigger.description = description;
+                target.description = description;
 
 
 
@@ -503,42 +580,31 @@ void Scripting::catalogueAllTargets()
                 continue;
             }
 
-            if (line.starts_with("Supported Scopes: "))
+            if (line.starts_with("Input Scopes: "))
             {
-                auto scopes = line.substr(18);
-
-                bool moreScopesAvailable = true;
-                size_t offset = 0;
-                while (moreScopesAvailable)
-                {
-                    std::string scope;
-                    auto startOffset = offset;
-                    offset = scopes.find_first_of(',', offset);
-                    if (offset == std::string::npos)
-                    {
-                        moreScopesAvailable = false;
-                        scope = scopes.substr(startOffset);
-                    }
-                    else
-                    {
-                        scope = scopes.substr(startOffset, offset - startOffset);
-                        offset += 2;
-                    }
-                    for (auto& scopeItem : Scripting::scopes)
-                    {
-                        if (scopeItem.name == scope)
-                        {
-                            trigger.scopes |= scopeItem.key;
-                        }
-                    }
-
-
-                }
+                auto scopes = line.substr(14);
+                GetScopes(scopes, target.inputScopes);
+                continue;
             }
 
-            if (line.starts_with("An interface trigger"))
+
+            if (line.starts_with("Output Scopes: "))
             {
-                trigger.interfaceTrigger = true;
+                auto scopes = line.substr(15);
+                GetScopes(scopes, target.outputScopes);
+                continue;
+            }
+
+            if (line == "Global Link: yes")
+            {
+                target.globalLink = true;
+                continue;
+            }
+
+            if (line == "Requires Data: yes")
+            {
+                target.requiresData = true;
+                continue;
             }
         }
 
@@ -548,7 +614,6 @@ void Scripting::catalogueAllTargets()
     {
         RE_LogError("Could not find \"Scripting Docs/event_targets.log\"");
     }
-
 }
 
 std::string Scripting::beautifyName(std::string input)
@@ -673,7 +738,7 @@ BasicNode* Scripting::getParam(std::string_view input)
         {
             if (scriptScope.name == scopeName)
             {
-                return new Param<Pin>({ed::PinKind::Output,scriptScope.key,PinShapes::square}, "");
+                return new Param<Pin>({ed::PinKind::Input,scriptScope.key,PinShapes::square}, "");
             }
         }
     }
@@ -688,6 +753,11 @@ BasicNode* Scripting::getParam(std::string_view input)
                 return new Param<ScriptingType>(type, "");
             }
         }
+    }
+
+    if (input == "single_alias_right[trigger_clause]")
+    {
+        return new Param<Pin>({ ed::PinKind::Output, noneScope, PinShapes::square },"Output");
     }
 
 
@@ -720,7 +790,14 @@ Trigger::Trigger(PossibleTrigger& trigger)
     description = trigger.description;
     for (auto& input : trigger.paramInputs)
     {
-        Scripting::addParam(input, parametersType);
+        Scripting::addParam(input, parameters);
+        if (parameters.size())
+        {
+            if (dynamic_cast<Param<NoBehaviour>*>(parameters.back().param))
+            {
+                RE_LogWarning("Undefined Behaviour found in: " + trigger.name);
+            }
+        }
     }
     scopes = trigger.scopes;
     activeScope = trigger.scopes;
@@ -742,22 +819,17 @@ void Pin::DrawPin()
     if (scopes)
     {
         ImGui::PushID(this);
-        bool input = ed::PinKind::Input == pinKind;
+        
+        ed::BeginPin(id, pinKind);
+        bool input = pinKind == ed::PinKind::Input;
+        ImVec2 pinPosition = { 1,0.5 };
         if (input)
         {
-            ImGui::Text(">");
-            ImGui::SameLine();
+            pinPosition = { 0,0.5 };
         }
-
-        ed::BeginPin(id, pinKind);
-        VecGui::DrawPinShape(pinShape);
+        ed::PinPivotAlignment(pinPosition);
+        VecGui::DrawPinShape(pinShape, input,IM_COL32_WHITE);
         ed::EndPin();
-
-        if (!input)
-        {
-            ImGui::SameLine();
-            ImGui::Text(">");
-        }
         ImGui::PopID();
     }
 }
@@ -770,11 +842,46 @@ void NodeConnection::drawLink()
 void ScriptingObject::addChild(Pin& thisPin, Pin& endPin, ScriptingObject& endNode)
 {
     children.emplace_back(thisPin, endPin, *endNode.node);
-    
-    endNode.activeScope = endNode.scopes & activeScope;
+
+    if (endNode.scopes == Scripting::noneScope)
+    {
+        endNode.activeScope = activeScope;
+        for (auto& parameter : endNode.parameters)
+        {
+            if (auto pin = dynamic_cast<Param<Pin>*>(parameter.param))
+            {
+                pin->variable.scopes = activeScope;
+            }
+        }
+    }
+    else
+    {
+        endNode.activeScope = endNode.scopes & activeScope;
+    }
+
 }
 
 void ScriptingObject::removeChild()
 {
 
+}
+
+Target::Target(PossibleTarget& trigger)
+{
+    name = trigger.typeName;
+    description = trigger.description;
+    scopes = trigger.inputScopes;
+    activeScope = trigger.inputScopes;
+    
+    globalLink = trigger.globalLink;
+    requiresData = trigger.requiresData;
+}
+
+YAML::Node Target::Serialize()
+{
+    return YAML::Node();
+}
+
+void Target::Deserialize(const YAML::Node& node)
+{
 }

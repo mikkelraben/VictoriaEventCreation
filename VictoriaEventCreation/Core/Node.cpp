@@ -19,11 +19,9 @@ template<>
 void Param<int>::EditableField()
 {
     ImGui::SameLine();
-    ImGui::PushItemWidth(-4);
     ImGui::PushID(&name);
     ImGui::InputInt(("##" + name).c_str(), &variable);
     ImGui::PopID();
-    ImGui::PopItemWidth();
 }
 
 template<>
@@ -43,11 +41,9 @@ template<>
 void Param<float>::EditableField()
 {
     ImGui::SameLine();
-    ImGui::PushItemWidth(-4);
     ImGui::PushID(&name);
     ImGui::InputFloat(("##" + name).c_str(), &variable);
     ImGui::PopID();
-    ImGui::PopItemWidth();
 }
 
 template<>
@@ -67,11 +63,9 @@ template<>
 void Param<bool>::EditableField()
 {
     ImGui::SameLine();
-    ImGui::PushItemWidth(-4);
     ImGui::PushID(&name);
     VecGui::CheckBox(name, variable);
     ImGui::PopID();
-    ImGui::PopItemWidth();
 }
 
 template<>
@@ -90,11 +84,9 @@ YAML::Node Param<bool>::Serialize()
 template<>
 void Param<std::string>::EditableField()
 {
-    ImGui::PushItemWidth(-4);
     ImGui::PushID(&name);
     ImGui::InputText(("##" + name).c_str(), &variable);
     ImGui::PopID();
-    ImGui::PopItemWidth();
 }
 
 template<>
@@ -215,7 +207,6 @@ void Param<Sound::Event>::FindSelection()
 void Param<ScriptingEnum>::EditableField()
 {
     ImGui::PushID(&name);
-    ImGui::PushItemWidth(200);
     std::string preview;
     if (variable.selected < variable.options.size())
     {
@@ -230,6 +221,7 @@ void Param<ScriptingEnum>::EditableField()
     
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, { 0,0 });
 
+    ImGui::SetNextWindowSizeConstraints({ 32,90 }, { -1,512 });
     if (VecGui::BeginCombo("##Enums", preview.c_str(), 0))
     {
         for (size_t i = 0; i < variable.options.size(); i++)
@@ -256,7 +248,6 @@ void Param<ScriptingEnum>::EditableField()
 
 
     ImGui::PopID();
-    ImGui::PopItemWidth();
 }
 
 YAML::Node Param<ScriptingEnum>::Serialize()
@@ -273,7 +264,6 @@ YAML::Node Param<ScriptingEnum>::Serialize()
 void Param<ScriptingType>::EditableField()
 {
     ImGui::PushID(&name);
-    ImGui::PushItemWidth(200);
     std::string preview;
     if (variable.selected < variable.options.size())
     {
@@ -324,7 +314,6 @@ void Param<ScriptingType>::EditableField()
 
 
     ImGui::PopID();
-    ImGui::PopItemWidth();
 }
 
 YAML::Node Param<ScriptingType>::Serialize()

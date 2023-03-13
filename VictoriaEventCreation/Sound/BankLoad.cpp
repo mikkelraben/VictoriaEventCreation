@@ -55,7 +55,7 @@ namespace Sound
                 if (newBank)
                 {
                     banks.push_back(newBank);
-                    RE_LogMessage("Loaded: " + dir_entry.path().string());
+                    //RE_LogMessage("Loaded: " + dir_entry.path().string());
                 }
             }
         }
@@ -87,6 +87,8 @@ namespace Sound
             }
 
         }
+
+        RE_LogMessage("Sound Loaded");
     }
 
     void SoundSystem::Update()

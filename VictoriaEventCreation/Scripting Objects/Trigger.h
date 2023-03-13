@@ -134,6 +134,17 @@ struct PossibleTrigger
     bool interfaceTrigger = false;
 };
 
+struct PossibleTarget
+{
+    std::string typeName;
+    std::string description;
+    scopeKey inputScopes = 0;
+    scopeKey outputScopes = 0;
+
+    bool globalLink = false;
+    bool requiresData = false;
+};
+
 struct ScriptingObject : public BasicNode
 {
     NodeEditorNode* node = nullptr;
@@ -144,7 +155,7 @@ struct ScriptingObject : public BasicNode
     std::vector<NodeConnection> children;
 
     //parameters inside node
-    std::vector<ScriptingParam> parametersType;
+    std::vector<ScriptingParam> parameters;
 
     scopeKey scopes = 0;
     scopeKey activeScope = 0;
@@ -162,23 +173,39 @@ struct Trigger : public ScriptingObject
     bool interfaceTrigger = false;
 };
 
+struct Target : public ScriptingObject
+{
+    Target() = default;
+    Target(PossibleTarget& trigger);
+    YAML::Node Serialize() override;
+    void Deserialize(const YAML::Node& node);
+
+    bool globalLink = false;
+    bool requiresData = false;
+};
+
+
 
 struct Scripting
 {
-    static void InitScripting() { RE_LogMessage("Initializing Scripting"); catalogueAllScopes(); catalogueAllEnums(); catalogueAllTypes(); catalogueAllTriggers(); catalogueAllTargets();};
+    static void InitScripting() { catalogueAllScopes(); catalogueAllEnums(); catalogueAllTypes(); catalogueAllTriggers(); catalogueAllTargets(); RE_LogMessage("Initialized Scripting");
+    };
     static std::vector<PossibleTrigger> triggers;
+    static std::vector<PossibleTarget> targets;
     static std::vector<scope> scopes;
     static std::vector<ScriptingEnum> enums;
     static std::vector<ScriptingType> types;
     //subset of scopes inwhich a trigger exists
     static std::vector<scope> utilizedScopes;
 
-    static Trigger* selectTrigger();
+    static ScriptingObject* selectScriptingObject(float x, float y);
     static void addParam(std::string_view input, std::vector<ScriptingParam>& list);
     int countScope(scopeKey scope);
+    static scopeKey noneScope;
     
 private:
     static void catalogueAllTriggers();
+    static void GetScopes(std::string& scopes, scopeKey& scope);
     static void catalogueAllScopes();
     static void catalogueAllEnums();
     static void catalogueAllTypes();

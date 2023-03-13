@@ -466,25 +466,36 @@ void VecGui::NoImageBehaviour(ImVec2& cursor, ImVec2& size, ImDrawList* draw_lis
     draw_list->AddRectFilled(cursor, cursor + size, noImageColor);
 }
 
-void VecGui::DrawPinShape(PinShapes pinShape)
+void VecGui::DrawPinShape(PinShapes pinShape, bool input,ImU32 color)
 {
     auto cursor = ImGui::GetCursorScreenPos();
 
     const float size = ImGui::GetFontSize();
-    ImVec2 max = { cursor.x + size, cursor.y + size };
+    const float arrowSize = size / 4;
+    ImVec2 maxTotal = { cursor.x + size+arrowSize, cursor.y + size };
+    ImVec2 maxIcon = { cursor.x + size, cursor.y + size };
     auto drawlist = ImGui::GetWindowDrawList();
-    ImRect bb(cursor, max);
-    ImGui::ItemSize({ size ,size });
+    ImRect bb(cursor, maxTotal);
+    ImGui::ItemSize(bb.GetSize());
     ImGui::ItemAdd(bb, 0);
+    ImVec2 arrowPosition = cursor + ImVec2(size+2, 0);
+    if (input)
+    {
+        arrowPosition = cursor;
+        cursor.x += arrowSize;
+        maxIcon.x += arrowSize;
+    }
+
+    drawlist->AddTriangleFilled(arrowPosition + ImVec2(0, 6), arrowPosition + ImVec2(0, -6) + ImVec2(0, size), { arrowPosition.x + arrowSize - 2, (arrowPosition.y * 2 + size) / 2 }, color);
 
     if (pinShape == PinShapes::square)
     {
-        drawlist->AddRect(cursor, max, IM_COL32_WHITE, 2, 0, 2);
+        drawlist->AddRect(cursor, maxIcon, color, 2, 0, 2);
     }
     else if (pinShape == PinShapes::circle)
     {
         ImVec2 middle = { cursor.x + size / 2, cursor.y + size / 2 };
-        drawlist->AddCircle(middle, size / 2, IM_COL32_WHITE, 16, 2);
+        drawlist->AddCircle(middle, size / 2, color, 16, 2);
     }
     else if (pinShape == PinShapes::arrow)
     {
